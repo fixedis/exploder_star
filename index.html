@@ -195,11 +195,11 @@ function autoTier(){
 }
 // пулы урезаны ~вдвое относительно прежнего high — это и есть −2× по частицам
 const QUALITY = {
-  high:   { dprCap:2,   shadows:true,  bloomOff:false, bloomScale:0.85, bloomStr:0.45, stars:10000, trails:22000, fire:14000, smoke:14000, crust:10000, crater:40000, seg:96,  sw:1300, deb:600, chunk:170 },
-  medium: { dprCap:1.5, shadows:true,  bloomOff:false, bloomScale:0.6,  bloomStr:0.40, stars:6000,  trails:13000, fire:8000,  smoke:8000,  crust:6000,  crater:24000, seg:64,  sw:1000, deb:450, chunk:130 },
-  low:    { dprCap:1,   shadows:false, bloomOff:false, bloomScale:0.5,  bloomStr:0.35, stars:3500,  trails:8000,  fire:5000,  smoke:5000,  crust:4000,  crater:16000, seg:48,  sw:800,  deb:350, chunk:100 },
-  ultra:  { dprCap:1,   shadows:false, bloomOff:false, bloomScale:0.4,  bloomStr:0.45, stars:2500,  trails:6000,  fire:4000,  smoke:4000,  crust:3000,  crater:12000, seg:36,  sw:650,  deb:300, chunk:90  },
-  eco:    { dprCap:1,   shadows:false, bloomOff:true,  bloomScale:0.4,  bloomStr:0.0,  stars:1500,  trails:3500,  fire:2500,  smoke:2500,  crust:2000,  crater:8000,  seg:28,  sw:500,  deb:240, chunk:70  }
+  high:   { dprCap:2,   shadows:true,  bloomOff:false, bloomScale:0.85, bloomStr:0.45, stars:10000, trails:22000, fire:14000, smoke:14000, crust:10000, crater:40000, seg:96, sw:1300, deb:600, chunk:170, sh:16, ring:400 },
+  medium: { dprCap:1.5, shadows:true,  bloomOff:false, bloomScale:0.6,  bloomStr:0.40, stars:6000,  trails:13000, fire:8000,  smoke:8000,  crust:6000,  crater:24000, seg:64, sw:1000, deb:450, chunk:130, sh:12, ring:350 },
+  low:    { dprCap:1,   shadows:false, bloomOff:true,  bloomScale:0.5,  bloomStr:0.0,  stars:2500,  trails:5000,  fire:3500,  smoke:3500,  crust:2500,  crater:8000,  seg:40, sw:600,  deb:250, chunk:70,  sh:8,  ring:250 },
+  ultra:  { dprCap:1,   shadows:false, bloomOff:false, bloomScale:0.4,  bloomStr:0.45, stars:2000,  trails:4000,  fire:3000,  smoke:3000,  crust:2000,  crater:6000,  seg:32, sw:500,  deb:200, chunk:60,  sh:8,  ring:200 },
+  eco:    { dprCap:1,   shadows:false, bloomOff:true,  bloomScale:0.4,  bloomStr:0.0,  stars:1200,  trails:2500,  fire:2000,  smoke:2000,  crust:1500,  crater:4000,  seg:24, sw:400,  deb:160, chunk:50,  sh:6,  ring:150 }
 };
 const TIER = (localStorage.getItem('lev_q') in QUALITY) ? localStorage.getItem('lev_q') : autoTier();
 const Q = QUALITY[TIER];
@@ -414,7 +414,7 @@ const baseQ = new THREE.Quaternion().setFromUnitVectors(X_AXIS, earthDir);
 const ORBIT_R = 320;   // радиус орбиты Левиафана вокруг спутника
 
 let planetRot = 0;
-const SH=16;
+const SH=Q.sh;
 const uShockDirL = Array.from({length:SH},()=>new THREE.Vector3(0,1,0));
 const uShockFront = new Array(SH).fill(0);
 const uShockWidth = new Array(SH).fill(0);
@@ -855,7 +855,7 @@ const atmoMat = new THREE.ShaderMaterial({
   transparent:true, side:THREE.BackSide, blending:THREE.AdditiveBlending, depthWrite:false, fog:false });
 scene.add(new THREE.Mesh(new THREE.SphereGeometry(R*1.05, 64, 64), atmoMat));
 
-const RING_N=400;
+const RING_N=Q.ring;
 const ringMesh=new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1,0),
   new THREE.MeshStandardMaterial({color:0xffffff, roughness:1.0, metalness:0.02}), RING_N);
 ringMesh.castShadow=false; ringMesh.receiveShadow=false;
@@ -1103,7 +1103,7 @@ function emitCrater(pool, lx,ly,lz, r,g,b, sz, glowFlag){
   pool.size[i]=sz; pool.glow[i]=glowFlag;
 }
 
-const IMP_N=16;
+const IMP_N=Q.sh;
 const _t1L=new THREE.Vector3(), _t2L=new THREE.Vector3(), _refL=new THREE.Vector3();
 const _epicW=new THREE.Vector3();
 const _up=new THREE.Vector3(0,1,0);
@@ -1984,15 +1984,17 @@ function animate(){
     ui.dist.textContent=Math.max(0,Math.floor((leviDist-R)*100));
     if(leviDist<=CONTACT_DIST){ leviDist=CONTACT_DIST; triggerImpact(); }
   } else if(leviState==='recoil'){
-    // резкий вираж: быстрый slerp к орбитальной ориентации + нарастание изгиба тела
+    // отскок (быстро затухает) → плавная дуга к орбите с изгибом тела
     levi.group.position.addScaledVector(leviVel, dt);
-    leviVel.multiplyScalar(1-0.9*dt);
-    const thetaNow=Math.atan2(levi.group.position.dot(perpB), levi.group.position.dot(perpA));
-    const tq=buildOrbitQuat(thetaNow);
-    levi.group.quaternion.slerp(tq, 1-Math.exp(-5.0*dt));
-    leviMat.uniforms.uManeuver.value += (1.0 - leviMat.uniforms.uManeuver.value)*(1-Math.exp(-3.0*dt));
+    leviVel.multiplyScalar(1-3.0*dt);
+    orbitAngle += 0.12*dt;
+    const op = perpA.clone().multiplyScalar(Math.cos(orbitAngle)*ORBIT_R).addScaledVector(perpB, Math.sin(orbitAngle)*ORBIT_R);
+    levi.group.position.lerp(op, 1-Math.exp(-1.2*dt));
+    const tq=buildOrbitQuat(orbitAngle);
+    levi.group.quaternion.slerp(tq, 1-Math.exp(-3.0*dt));
+    leviMat.uniforms.uManeuver.value += (1.0 - leviMat.uniforms.uManeuver.value)*(1-Math.exp(-2.5*dt));
     tentacleMul=1.2;
-    if(impT>1.8){ leviState='orbit'; orbitAngle=Math.atan2(levi.group.position.dot(perpB), levi.group.position.dot(perpA)); }
+    if(levi.group.position.distanceTo(op) < 25 || impT>3.5){ leviState='orbit'; }
   } else if(leviState==='orbit'){
     // настоящая круговая орбита вокруг спутника, нос по касательной, тело выпрямляется
     orbitAngle += 0.15*dt;
