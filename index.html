@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Leviathan Impact — Satellite Shatter [MASTER v30 ULTRA]</title>
+<title>Leviathan Impact — Satellite Shatter [MASTER v31 ECO]</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 html,body { touch-action:none; overscroll-behavior:none; }
@@ -78,7 +78,6 @@ canvas { display:block; touch-action:none; }
 .tact:active { transform:scale(0.94); }
 
 #vignette { position:absolute; inset:0; pointer-events:none; z-index:5; background:radial-gradient(circle, transparent 42%, rgba(0,0,0,0.92) 100%); }
-/* плёночные слои: на тач-устройствах и в ultra выключены полностью (display:none = 0 стоимости) */
 .film { position:absolute; inset:0; pointer-events:none; }
 #grain { z-index:14; opacity:0.09;
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -111,7 +110,6 @@ canvas { display:block; touch-action:none; }
     radial-gradient(circle at 88% 18%, rgba(255,255,255,0.4) 0 1px, transparent 2px);
   animation:dustDrift 11s linear infinite; }
 @keyframes dustDrift { 0%{transform:translate(0,0)} 100%{transform:translate(-30px,20px)} }
-/* главный выключатель плёнки: тач + ultra */
 @media (pointer:coarse){ .film { display:none !important; } }
 body.no-film .film { display:none !important; }
 .cinema-bar { position:absolute; left:0; right:0; height:6vh; background:#000; z-index:17; pointer-events:none; }
@@ -196,8 +194,9 @@ body.no-film .film { display:none !important; }
 
 <script type="module">
 /* ═══════════════════════════════════════════════════════════════════════════════
-   v30 ULTRA — плёнка вырезана на тач/ultra (display:none), ultra = bloom off
-   (прямой рендер мимо composer, −3 прохода). Физика/шейдеры = v28, нетронуты.
+   v31 ECO — ultra возвращён как «мобильный, но живой» (bloom в крошечном буфере +
+   объёмные частицы), eco = чистое выживание (bloom off). 5 пресетов.
+   Физика/шейдеры = v28, нетронуты.
    ═══════════════════════════════════════════════════════════════════════════════ */
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -211,27 +210,28 @@ const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints>0);
 function autoTier(){
   const cores = navigator.hardwareConcurrency || 4;
   const mem   = navigator.deviceMemory || 4;
-  if(IS_TOUCH) return (cores<=4 || mem<=3) ? 'ultra' : 'medium';   // телефон: ultra или medium (плёнки нет в любом случае)
+  if(IS_TOUCH) return (cores<=4 || mem<=3) ? 'eco' : 'ultra';   // слабый телефон -> eco, обычный -> ultra (живой)
   if(cores>=8 && mem>=8) return 'high';
   return 'medium';
 }
 const QUALITY = {
-  high:   { dprCap:2,   shadows:true,  bloomOff:false, bloomScale:1.0, bloomStr:0.5,  stars:16000, trails:40000, fire:26000, smoke:26000, crust:18000, crater:70000, seg:128, sw:2000, deb:900, chunk:240 },
+  high:   { dprCap:2,   shadows:true,  bloomOff:false, bloomScale:1.0, bloomStr:0.50, stars:16000, trails:40000, fire:26000, smoke:26000, crust:18000, crater:70000, seg:128, sw:2000, deb:900, chunk:240 },
   medium: { dprCap:1.5, shadows:true,  bloomOff:false, bloomScale:0.6, bloomStr:0.45, stars:9000,  trails:22000, fire:14000, smoke:14000, crust:10000, crater:40000, seg:64,  sw:1400, deb:600, chunk:180 },
-  low:    { dprCap:1,   shadows:false, bloomOff:false, bloomScale:0.5, bloomStr:0.35, stars:4000,  trails:12000, fire:8000,  smoke:8000,  crust:6000,  crater:24000, seg:48,  sw:1000, deb:450, chunk:140 },
-  ultra:  { dprCap:1,   shadows:false, bloomOff:true,  bloomScale:0.5, bloomStr:0.0,  stars:2500,  trails:6000,  fire:4000,  smoke:4000,  crust:3000,  crater:14000, seg:32,  sw:800,  deb:350, chunk:110 }
+  low:    { dprCap:1,   shadows:false, bloomOff:false, bloomScale:0.5, bloomStr:0.40, stars:5000,  trails:14000, fire:9000,  smoke:9000,  crust:7000,  crater:28000, seg:48,  sw:1100, deb:450, chunk:140 },
+  ultra:  { dprCap:1,   shadows:false, bloomOff:false, bloomScale:0.4, bloomStr:0.55, stars:3500,  trails:10000, fire:7000,  smoke:7000,  crust:5000,  crater:20000, seg:36,  sw:900,  deb:380, chunk:120 },
+  eco:    { dprCap:1,   shadows:false, bloomOff:true,  bloomScale:0.4, bloomStr:0.0,  stars:2000,  trails:5000,  fire:3500,  smoke:3500,  crust:3000,  crater:12000, seg:28,  sw:700,  deb:300, chunk:90  }
 };
 const TIER = (localStorage.getItem('lev_q') in QUALITY) ? localStorage.getItem('lev_q') : autoTier();
 const Q = QUALITY[TIER];
-if(TIER==='ultra') document.body.classList.add('no-film');   // ultra даже на десктопе гасит плёнку
+if(TIER==='eco') document.body.classList.add('no-film');   // eco гасит плёнку даже на десктопе
 document.getElementById('qTier').textContent = TIER.toUpperCase();
 document.getElementById('qBadge').addEventListener('click', ()=>{
-  const order=['high','medium','low','ultra'];
+  const order=['high','medium','low','ultra','eco'];
   localStorage.setItem('lev_q', order[(order.indexOf(TIER)+1)%order.length]);
   location.reload();
 });
 const SEG = Q.seg;
-const CLOUD_SEG = Math.max(32, Math.round(SEG*0.75));
+const CLOUD_SEG = Math.max(28, Math.round(SEG*0.75));
 
 const noiseChunk = `
 vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
@@ -304,7 +304,6 @@ renderer.shadowMap.enabled = Q.shadows;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
-// composer создаётся всегда (разово дёшево), но на ultra не рендерится — animate идёт напрямую
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth*Q.bloomScale, innerHeight*Q.bloomScale), Q.bloomStr, 0.5, 0.9);
@@ -348,7 +347,8 @@ sun.shadow.camera.near = 1; sun.shadow.camera.far = 3200;
 sun.shadow.camera.left = -700; sun.shadow.camera.right = 700; sun.shadow.camera.top = 700; sun.shadow.camera.bottom = -700;
 sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.6;
 scene.add(sun); scene.add(sun.target);
-scene.add(new THREE.AmbientLight(0x141a28, 0.34));
+const ambient = new THREE.AmbientLight(0x141a28, 0.34);
+scene.add(ambient);
 
 const SUN_DIST = 8200;
 const sunDiscMat = new THREE.ShaderMaterial({
@@ -1519,6 +1519,8 @@ window.addEventListener('keydown', e=>{
 window.addEventListener('keyup', e=>{ keys[e.code]=false; });
 const _mvF=new THREE.Vector3(), _mvR=new THREE.Vector3(), _mv=new THREE.Vector3();
 
+const touchMove={x:0,y:0};
+let touchUp=false, touchDown=false;
 (function setupTouch(){
   const stick=document.getElementById('stick'), nub=document.getElementById('stickNub');
   const tbUp=document.getElementById('tbUp'), tbDown=document.getElementById('tbDown');
@@ -1543,8 +1545,6 @@ const _mvF=new THREE.Vector3(), _mvR=new THREE.Vector3(), _mv=new THREE.Vector3(
   taFire.addEventListener('click', ()=>{ if(phase==='approach') startDive(); });
   taReset.addEventListener('click', ()=>resetScene());
 })();
-const touchMove={x:0,y:0};
-let touchUp=false, touchDown=false;
 
 let phase='approach', leviState='idle', impactStart=0, spin=0, leviVelX=0, leviDist=APPROACH_DIST, frame=0;
 const leviVel=new THREE.Vector3();
@@ -1615,7 +1615,7 @@ function resetScene(){
   planetRot=0; earthPlanet.rotation.y=0; cloudSphere.rotation.y=0;
   timeScale=1; targetTimeScale=1; shakeT=0; shakeAmp=0;
   secondaryT=0;
-  coreDim=1; coreMat.uniforms.uDim.value=1; coreLight.intensity=0;
+  coreDim=1; coreMat.uniforms.uDim.value=1; coreLight.intensity=0; ambient.intensity=0.34;
   clusterLaunched=false;
   debugOn=false; earthMat.uniforms.uDebug.value=0; cloudMat.uniforms.uDebug.value=0;
   for(let i=0;i<SH;i++){ uMarkOn[i]=0; uShockInt[i]=0; uShockDust[i]=0; uShockFront[i]=0;
@@ -1752,6 +1752,7 @@ function animate(){
   const slowmo = (phase==='dive'||phase==='impact'||phase==='orbit') ? SLOWMO : 1.0;
   const dt = rdt*timeScale*slowmo;
   now += dt;
+  ambient.intensity = 0.34;   // базовое значение кадра (страховка от залипа между фазами)
 
   for(let i=0;i<SH;i++){
     if(cloudT[i]>=0){
@@ -2000,10 +2001,12 @@ function animate(){
     const bp=(now*rate)%1.0;
     const thump=Math.exp(-Math.pow((bp-0.15)/0.1,2));
     const amp=0.3+0.7*prog;
-    bloom.strength=Q.bloomStr + thump*0.4*amp;
-    renderer.toneMappingExposure=0.95 + thump*0.1*amp;
+    if(!Q.bloomOff) bloom.strength = Q.bloomStr + thump*0.4*amp;        // пресеты с bloom: пульс свечения
+    const expAmp = Q.bloomOff ? 0.38 : 0.10;                          // eco берёт яркостью то, что нет свечением
+    renderer.toneMappingExposure = 0.95 + thump*expAmp*amp;
+    ambient.intensity = 0.34 + thump*0.22*amp;                        // дыхание теней — живо во всех пресетах
   } else if(phase!=='impact' && phase!=='orbit'){
-    bloom.strength=Q.bloomStr; renderer.toneMappingExposure=0.95;
+    bloom.strength=Q.bloomStr; renderer.toneMappingExposure=0.95; ambient.intensity=0.34;
   }
 
   if(phase==='impact'||phase==='orbit'){
@@ -2051,7 +2054,7 @@ function animate(){
   }
 
   ui.pcount.textContent=(activeP+blastAlive).toLocaleString();
-  if(Q.bloomOff) renderer.render(scene, camera);   // ultra: мимо composer, −3 прохода
+  if(Q.bloomOff) renderer.render(scene, camera);   // eco: мимо composer, −3 прохода
   else composer.render();
 }
 
@@ -2062,10 +2065,10 @@ window.addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; cam
 try {
   resetScene();
   renderer.compile(scene, camera);
-  console.log('[impact:v30] ULTRA tier='+TIER, 'bloomOff='+Q.bloomOff, 'film='+(getComputedStyle(document.getElementById('grain')).display), Q);
+  console.log('[impact:v31] ECO tier='+TIER, 'bloomOff='+Q.bloomOff, Q);
   animate();
 } catch (e) {
-  console.error('[impact:v30] INIT ERROR:', e);
+  console.error('[impact:v31] INIT ERROR:', e);
 }
 </script>
 </body>
