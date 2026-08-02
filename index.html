@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Leviathan Impact — Satellite Shatter [MASTER v29 MOBILE]</title>
+<title>Leviathan Impact — Satellite Shatter [MASTER v30 ULTRA]</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 html,body { touch-action:none; overscroll-behavior:none; }
@@ -59,7 +59,6 @@ canvas { display:block; touch-action:none; }
 #qBadge:active { transform:scale(0.92); }
 #qBadge b { color:rgba(255,200,140,0.8); }
 
-/* ── тач-управление: скрыто на десктопе, видно на тач-устройствах ── */
 #touchUI { display:none; }
 #stick { position:absolute; left:5vw; bottom:9vh; width:118px; height:118px; z-index:20;
   border-radius:50%; border:1px solid rgba(140,180,210,0.25); background:rgba(120,160,190,0.06);
@@ -79,30 +78,32 @@ canvas { display:block; touch-action:none; }
 .tact:active { transform:scale(0.94); }
 
 #vignette { position:absolute; inset:0; pointer-events:none; z-index:5; background:radial-gradient(circle, transparent 42%, rgba(0,0,0,0.92) 100%); }
-#grain { position:absolute; inset:0; pointer-events:none; z-index:14; opacity:0.09;
+/* плёночные слои: на тач-устройствах и в ultra выключены полностью (display:none = 0 стоимости) */
+.film { position:absolute; inset:0; pointer-events:none; }
+#grain { z-index:14; opacity:0.09;
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size:200px 200px; animation:grainShift 0.4s steps(5) infinite; }
-#grain-fine { position:absolute; inset:0; pointer-events:none; z-index:14; opacity:0.05;
+#grain-fine { z-index:14; opacity:0.05;
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='5.0' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size:140px 140px; animation:grainShift2 0.22s steps(3) infinite; }
 @keyframes grainShift { 0%{transform:translate(0,0)} 25%{transform:translate(-2%,1%)} 50%{transform:translate(1%,-1%)} 75%{transform:translate(-1%,-2%)} 100%{transform:translate(1%,1%)} }
 @keyframes grainShift2 { 0%{transform:translate(0,0)} 50%{transform:translate(1.5%,-1.5%)} 100%{transform:translate(-1%,1%)} }
-#film-tint { position:absolute; inset:0; pointer-events:none; z-index:13; background:rgba(54,36,18,0.13); mix-blend-mode:multiply; }
-#film-tint-grain { position:absolute; inset:0; pointer-events:none; z-index:13; opacity:0.06; mix-blend-mode:overlay;
+#film-tint { z-index:13; background:rgba(54,36,18,0.13); mix-blend-mode:multiply; }
+#film-tint-grain { z-index:13; opacity:0.06; mix-blend-mode:overlay;
   background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='3.0' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size:170px 170px; animation:grainShift 1.3s steps(6) infinite; }
-#film-leak { position:absolute; inset:0; pointer-events:none; z-index:13; opacity:0.06; mix-blend-mode:screen;
+#film-leak { z-index:13; opacity:0.06; mix-blend-mode:screen;
   background:radial-gradient(120% 80% at -10% -10%, rgba(255,150,70,0.6), transparent 45%),
              radial-gradient(120% 80% at 110% 110%, rgba(255,110,60,0.5), transparent 45%);
   animation:leakPulse 9s ease-in-out infinite; }
 @keyframes leakPulse { 0%,100%{opacity:0.04} 50%{opacity:0.09} }
-#film-flicker { position:absolute; inset:0; pointer-events:none; z-index:15; background:#000; mix-blend-mode:overlay; animation:flicker 0.13s infinite; }
+#film-flicker { z-index:15; background:#000; mix-blend-mode:overlay; animation:flicker 0.13s infinite; }
 @keyframes flicker { 0%{opacity:0.02} 20%{opacity:0.05} 40%{opacity:0.01} 60%{opacity:0.06} 80%{opacity:0.02} 100%{opacity:0.04} }
-#film-scratch { position:absolute; inset:0; pointer-events:none; z-index:16; opacity:0.10;
+#film-scratch { z-index:16; opacity:0.10;
   background:repeating-linear-gradient(90deg, transparent 0 38px, rgba(255,255,255,0.05) 38px 39px, transparent 39px 120px, rgba(255,255,255,0.08) 120px 121px, transparent 121px 300px);
   animation:scratchMove 7s linear infinite; }
 @keyframes scratchMove { 0%{transform:translateX(0)} 100%{transform:translateX(300px)} }
-#film-dust { position:absolute; inset:0; pointer-events:none; z-index:16; opacity:0.06; mix-blend-mode:screen;
+#film-dust { z-index:16; opacity:0.06; mix-blend-mode:screen;
   background:
     radial-gradient(circle at 18% 32%, rgba(255,255,255,0.5) 0 1px, transparent 2px),
     radial-gradient(circle at 72% 64%, rgba(255,255,255,0.4) 0 1px, transparent 2px),
@@ -110,10 +111,12 @@ canvas { display:block; touch-action:none; }
     radial-gradient(circle at 88% 18%, rgba(255,255,255,0.4) 0 1px, transparent 2px);
   animation:dustDrift 11s linear infinite; }
 @keyframes dustDrift { 0%{transform:translate(0,0)} 100%{transform:translate(-30px,20px)} }
+/* главный выключатель плёнки: тач + ultra */
+@media (pointer:coarse){ .film { display:none !important; } }
+body.no-film .film { display:none !important; }
 .cinema-bar { position:absolute; left:0; right:0; height:6vh; background:#000; z-index:17; pointer-events:none; }
 .cinema-bar.top { top:0; } .cinema-bar.bot { bottom:0; }
 
-/* ═══════════════════ МОБИЛЬНАЯ АДАПТАЦИЯ ═══════════════════ */
 @media (max-width:820px), (pointer:coarse){
   .corner { width:30px; height:30px; }
   .corner.tl{top:3%;left:3%} .corner.tr{top:3%;right:3%} .corner.bl{bottom:3%;left:3%} .corner.br{bottom:3%;right:3%}
@@ -181,21 +184,20 @@ canvas { display:block; touch-action:none; }
   <button class="ctrl-btn" id="btnReset">RESET</button>
 </div>
 <div id="vignette"></div>
-<div id="film-tint"></div>
-<div id="film-tint-grain"></div>
-<div id="film-leak"></div>
-<div id="grain"></div>
-<div id="grain-fine"></div>
-<div id="film-flicker"></div>
-<div id="film-scratch"></div>
-<div id="film-dust"></div>
+<div id="film-tint" class="film"></div>
+<div id="film-tint-grain" class="film"></div>
+<div id="film-leak" class="film"></div>
+<div id="grain" class="film"></div>
+<div id="grain-fine" class="film"></div>
+<div id="film-flicker" class="film"></div>
+<div id="film-scratch" class="film"></div>
+<div id="film-dust" class="film"></div>
 <div class="cinema-bar top"></div><div class="cinema-bar bot"></div>
 
 <script type="module">
 /* ═══════════════════════════════════════════════════════════════════════════════
-   v29 MOBILE — авто-детект железа + тач-управление + адаптивный HUD.
-   Физика и шейдеры = v28 (нетронуты). Меняется обвязка под экран/производительность.
-   Тач-ввод: джойстик → touchMove{x,y}; кнопки ▲▼ → touchUp/Down; применяются в animate.
+   v30 ULTRA — плёнка вырезана на тач/ultra (display:none), ultra = bloom off
+   (прямой рендер мимо composer, −3 прохода). Физика/шейдеры = v28, нетронуты.
    ═══════════════════════════════════════════════════════════════════════════════ */
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -205,29 +207,31 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-/* ── детект железа + пресеты качества ── */
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints>0);
 function autoTier(){
   const cores = navigator.hardwareConcurrency || 4;
   const mem   = navigator.deviceMemory || 4;
-  if(IS_TOUCH && (cores<=4 || mem<=3)) return 'low';
-  if(IS_TOUCH) return 'medium';
+  if(IS_TOUCH) return (cores<=4 || mem<=3) ? 'ultra' : 'medium';   // телефон: ultra или medium (плёнки нет в любом случае)
   if(cores>=8 && mem>=8) return 'high';
   return 'medium';
 }
 const QUALITY = {
-  high:   { dprCap:2,   shadows:true,  bloomScale:1.0, bloomStr:0.5,  stars:16000, trails:40000, fire:26000, smoke:26000, crust:18000, crater:70000 },
-  medium: { dprCap:1.5, shadows:true,  bloomScale:0.6, bloomStr:0.45, stars:9000,  trails:22000, fire:14000, smoke:14000, crust:10000, crater:40000 },
-  low:    { dprCap:1,   shadows:false, bloomScale:0.5, bloomStr:0.35, stars:4000,  trails:12000, fire:8000,  smoke:8000,  crust:6000,  crater:24000 }
+  high:   { dprCap:2,   shadows:true,  bloomOff:false, bloomScale:1.0, bloomStr:0.5,  stars:16000, trails:40000, fire:26000, smoke:26000, crust:18000, crater:70000, seg:128, sw:2000, deb:900, chunk:240 },
+  medium: { dprCap:1.5, shadows:true,  bloomOff:false, bloomScale:0.6, bloomStr:0.45, stars:9000,  trails:22000, fire:14000, smoke:14000, crust:10000, crater:40000, seg:64,  sw:1400, deb:600, chunk:180 },
+  low:    { dprCap:1,   shadows:false, bloomOff:false, bloomScale:0.5, bloomStr:0.35, stars:4000,  trails:12000, fire:8000,  smoke:8000,  crust:6000,  crater:24000, seg:48,  sw:1000, deb:450, chunk:140 },
+  ultra:  { dprCap:1,   shadows:false, bloomOff:true,  bloomScale:0.5, bloomStr:0.0,  stars:2500,  trails:6000,  fire:4000,  smoke:4000,  crust:3000,  crater:14000, seg:32,  sw:800,  deb:350, chunk:110 }
 };
 const TIER = (localStorage.getItem('lev_q') in QUALITY) ? localStorage.getItem('lev_q') : autoTier();
 const Q = QUALITY[TIER];
+if(TIER==='ultra') document.body.classList.add('no-film');   // ultra даже на десктопе гасит плёнку
 document.getElementById('qTier').textContent = TIER.toUpperCase();
 document.getElementById('qBadge').addEventListener('click', ()=>{
-  const order=['high','medium','low'];
-  localStorage.setItem('lev_q', order[(order.indexOf(TIER)+1)%3]);
+  const order=['high','medium','low','ultra'];
+  localStorage.setItem('lev_q', order[(order.indexOf(TIER)+1)%order.length]);
   location.reload();
 });
+const SEG = Q.seg;
+const CLOUD_SEG = Math.max(32, Math.round(SEG*0.75));
 
 const noiseChunk = `
 vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
@@ -291,7 +295,7 @@ function tangentOffset(d, amp){
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 1, 60000);
-const renderer = new THREE.WebGLRenderer({ antialias:!IS_TOUCH || Q.dprCap>=2, powerPreference:'high-performance' });
+const renderer = new THREE.WebGLRenderer({ antialias:!IS_TOUCH && Q.dprCap>=2, powerPreference:'high-performance' });
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, Q.dprCap));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -300,6 +304,7 @@ renderer.shadowMap.enabled = Q.shadows;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
+// composer создаётся всегда (разово дёшево), но на ultra не рендерится — animate идёт напрямую
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth*Q.bloomScale, innerHeight*Q.bloomScale), Q.bloomStr, 0.5, 0.9);
@@ -409,9 +414,6 @@ function starsPoints(data){
 }
 scene.add(starsPoints(makeStars(Q.stars, 9000, 13000)));
 
-/* ═══════════════════════════════════════════════════════════════════════════════
-   ГЕОМЕТРИЯ СЦЕНЫ
-   ═══════════════════════════════════════════════════════════════════════════════ */
 const PLANET_POS = new THREE.Vector3(2800, -900, -4200);
 const PLANET_R = 1150;
 const EARTH_GM = 1.5e8;
@@ -573,7 +575,7 @@ const earthMat = new THREE.ShaderMaterial({
       gl_FragColor=vec4(col,1.0);
     }`
 });
-const earthPlanet = new THREE.Mesh(new THREE.SphereGeometry(PLANET_R, Q.shadows?128:64, Q.shadows?128:64), earthMat);
+const earthPlanet = new THREE.Mesh(new THREE.SphereGeometry(PLANET_R, SEG, SEG), earthMat);
 earthPlanet.position.copy(PLANET_POS);
 scene.add(earthPlanet);
 
@@ -654,7 +656,7 @@ const cloudMat = new THREE.ShaderMaterial({
     }`,
   transparent:true, side:THREE.FrontSide, depthWrite:false, fog:false
 });
-const cloudSphere = new THREE.Mesh(new THREE.SphereGeometry(PLANET_R*1.03, Q.shadows?96:48, Q.shadows?96:48), cloudMat);
+const cloudSphere = new THREE.Mesh(new THREE.SphereGeometry(PLANET_R*1.03, CLOUD_SEG, CLOUD_SEG), cloudMat);
 cloudSphere.position.copy(PLANET_POS);
 scene.add(cloudSphere);
 
@@ -684,7 +686,7 @@ function makeEarthAtmo(){
     uniforms:{ uSunDir:{value:sunDir.clone()}, uTime:{value:0} },
     transparent:true, side:THREE.BackSide, blending:THREE.AdditiveBlending, depthWrite:false, fog:false
   });
-  const mesh = new THREE.Mesh(new THREE.SphereGeometry(PLANET_R*1.14, Q.shadows?96:48, Q.shadows?96:48), mat);
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(PLANET_R*1.14, CLOUD_SEG, CLOUD_SEG), mat);
   mesh.position.copy(PLANET_POS); scene.add(mesh);
   return mat;
 }
@@ -912,7 +914,7 @@ function scatterRing(){
   }
 }
 
-const D=900;
+const D=Q.deb;
 const debris=new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1,1),
   new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.96,metalness:0.04}), D);
 debris.castShadow=Q.shadows; debris.receiveShadow=Q.shadows; debris.frustumCulled=false;
@@ -921,7 +923,7 @@ for(let i=0;i<D;i++){ dVel.push(new THREE.Vector3()); dRot.push(new THREE.Vector
   _dc.setRGB(0.04+Math.random()*0.06,0.035+Math.random()*0.05,0.03+Math.random()*0.04); debris.setColorAt(i,_dc); }
 debris.instanceColor.needsUpdate=true; scene.add(debris);
 
-const CHUNK=240;
+const CHUNK=Q.chunk;
 const chunkMat2=new THREE.ShaderMaterial({
   uniforms:{ uTime:{value:0}, uSunDir:{value:sunDir.clone()} },
   vertexShader:`varying vec3 vL; varying vec3 vN; void main(){ vL=position; vN=normalize(mat3(modelMatrix)*normal);
@@ -941,7 +943,7 @@ const cVel=[], cRot=[];
 for(let i=0;i<CHUNK;i++){ cVel.push(new THREE.Vector3()); cRot.push(new THREE.Vector3(Math.random()-0.5,Math.random()-0.5,Math.random()-0.5).normalize()); }
 scene.add(chunkDebris);
 
-const SW=2000; const swPos=new Float32Array(SW*3), swLife=new Float32Array(SW), swSpeed=new Float32Array(SW);
+const SW=Q.sw; const swPos=new Float32Array(SW*3), swLife=new Float32Array(SW), swSpeed=new Float32Array(SW);
 const swG=new THREE.BufferGeometry();
 swG.setAttribute('position',new THREE.BufferAttribute(swPos,3));
 swG.setAttribute('life',new THREE.BufferAttribute(swLife,1));
@@ -1498,9 +1500,6 @@ function buildLeviathan(){
 const levi = buildLeviathan();
 scene.add(levi.group);
 
-/* ═══════════════════════════════════════════════════════════════════════════════
-   КАМЕРА + тач-джойстик
-   ═══════════════════════════════════════════════════════════════════════════════ */
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.dampingFactor = 0.06;
 controls.minDistance = 5; controls.maxDistance = 14000;
@@ -1520,16 +1519,13 @@ window.addEventListener('keydown', e=>{
 window.addEventListener('keyup', e=>{ keys[e.code]=false; });
 const _mvF=new THREE.Vector3(), _mvR=new THREE.Vector3(), _mv=new THREE.Vector3();
 
-/* ── тач-ввод: джойстик (полёт по XZ) + кнопки высоты ── */
-const touchMove={x:0,y:0};
-let touchUp=false, touchDown=false;
 (function setupTouch(){
   const stick=document.getElementById('stick'), nub=document.getElementById('stickNub');
   const tbUp=document.getElementById('tbUp'), tbDown=document.getElementById('tbDown');
   const taFire=document.getElementById('taFire'), taReset=document.getElementById('taReset');
   if(!stick) return;
   let activeId=null, cx=0, cy=0, rad=0;
-  function rect(){ const r=stick.getBoundingClientRect(); cx=r.left+r.width/2; cy=r.top+r.height/2; rad=r.width/2-23; }
+  const rect=()=>{ const r=stick.getBoundingClientRect(); cx=r.left+r.width/2; cy=r.top+r.height/2; rad=r.width/2-23; };
   stick.addEventListener('pointerdown', e=>{ e.preventDefault(); activeId=e.pointerId; stick.setPointerCapture(e.pointerId); rect();
     const dx=e.clientX-cx, dy=e.clientY-cy, l=Math.hypot(dx,dy)||1, k=Math.min(1,l/rad);
     touchMove.x=(dx/l)*k; touchMove.y=(dy/l)*k;
@@ -1538,7 +1534,7 @@ let touchUp=false, touchDown=false;
     const dx=e.clientX-cx, dy=e.clientY-cy, l=Math.hypot(dx,dy)||1, k=Math.min(1,l/rad);
     touchMove.x=(dx/l)*k; touchMove.y=(dy/l)*k;
     nub.style.transform=`translate(${touchMove.x*rad}px,${touchMove.y*rad}px)`; });
-  function end(e){ if(e.pointerId!==activeId) return; activeId=null; touchMove.x=0; touchMove.y=0; nub.style.transform='translate(0,0)'; }
+  const end=(e)=>{ if(e.pointerId!==activeId) return; activeId=null; touchMove.x=0; touchMove.y=0; nub.style.transform='translate(0,0)'; };
   stick.addEventListener('pointerup', end); stick.addEventListener('pointercancel', end); stick.addEventListener('pointerleave', end);
   const hold=(el,set)=>{ el.addEventListener('pointerdown',e=>{e.preventDefault();set(true);el.classList.add('on');});
     const off=()=>{set(false);el.classList.remove('on');};
@@ -1547,6 +1543,8 @@ let touchUp=false, touchDown=false;
   taFire.addEventListener('click', ()=>{ if(phase==='approach') startDive(); });
   taReset.addEventListener('click', ()=>resetScene());
 })();
+const touchMove={x:0,y:0};
+let touchUp=false, touchDown=false;
 
 let phase='approach', leviState='idle', impactStart=0, spin=0, leviVelX=0, leviDist=APPROACH_DIST, frame=0;
 const leviVel=new THREE.Vector3();
@@ -2053,7 +2051,8 @@ function animate(){
   }
 
   ui.pcount.textContent=(activeP+blastAlive).toLocaleString();
-  composer.render();
+  if(Q.bloomOff) renderer.render(scene, camera);   // ultra: мимо composer, −3 прохода
+  else composer.render();
 }
 
 window.addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
@@ -2063,10 +2062,10 @@ window.addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; cam
 try {
   resetScene();
   renderer.compile(scene, camera);
-  console.log('[impact:v29] MOBILE tier='+TIER, Q, 'touch='+IS_TOUCH);
+  console.log('[impact:v30] ULTRA tier='+TIER, 'bloomOff='+Q.bloomOff, 'film='+(getComputedStyle(document.getElementById('grain')).display), Q);
   animate();
 } catch (e) {
-  console.error('[impact:v29] INIT ERROR:', e);
+  console.error('[impact:v30] INIT ERROR:', e);
 }
 </script>
 </body>
