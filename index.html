@@ -1,0 +1,2010 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leviathan Impact — Satellite Shatter [MASTER v28 TRUEFRAG]</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { overflow:hidden; background:#000; font-family:'Segoe UI',monospace; }
+canvas { display:block; }
+#hud { position:absolute; inset:0; pointer-events:none; z-index:10; }
+#hud.shake { animation:hudShake 0.6s cubic-bezier(.36,.07,.19,.97) both; }
+@keyframes hudShake {
+  10%,90%{transform:translate(-1px,0)} 20%,80%{transform:translate(2px,1px)}
+  30%,50%,70%{transform:translate(-3px,-1px)} 40%,60%{transform:translate(3px,1px)} }
+.corner { position:absolute; width:46px; height:46px; border:1px solid rgba(140,180,210,0.16); transition:border-color .4s; }
+.corner.tl { top:5%; left:3%; border-right:none; border-bottom:none; }
+.corner.tr { top:5%; right:3%; border-left:none; border-bottom:none; }
+.corner.bl { bottom:5%; left:3%; border-right:none; border-top:none; }
+.corner.br { bottom:5%; right:3%; border-left:none; border-top:none; }
+.hud-text { position:absolute; top:6.5%; left:50%; transform:translateX(-50%);
+  color:rgba(175,205,225,0.5); font-size:13px; letter-spacing:5px; text-transform:uppercase; font-weight:600;
+  text-shadow:0 0 6px rgba(80,120,160,0.25); animation:flick 4s infinite; transition:color .4s; }
+.hud-sub { position:absolute; top:9.5%; left:50%; transform:translateX(-50%);
+  color:rgba(150,180,200,0.3); font-size:10px; letter-spacing:2px; }
+.hud-data { position:absolute; bottom:8%; left:4%; color:rgba(150,180,200,0.38); font-size:10px; letter-spacing:1px; line-height:1.9; }
+.hud-data-right { position:absolute; bottom:8%; right:4%; text-align:right; color:rgba(150,180,200,0.38); font-size:10px; letter-spacing:1px; line-height:1.9; }
+.hud-data b, .hud-data-right b { color:rgba(200,225,240,0.62); font-weight:600; }
+@keyframes flick { 0%,97%,100%{opacity:1} 98%{opacity:0.5} }
+#burnWrap { position:absolute; bottom:14.5%; left:50%; transform:translateX(-50%); width:340px; text-align:center; }
+#burnLabel { color:rgba(255,150,90,0.55); font-size:9px; letter-spacing:3px; text-transform:uppercase; margin-bottom:5px; }
+#burnPct { color:rgba(255,180,120,0.85); font-size:22px; font-weight:700; letter-spacing:1px; line-height:1; text-shadow:0 0 12px rgba(255,90,30,0.4); }
+#burnTrack { position:relative; height:5px; margin-top:6px; background:rgba(120,70,40,0.18); border:1px solid rgba(200,110,60,0.25); overflow:hidden; }
+#burnFill { position:absolute; left:0; top:0; bottom:0; width:0%;
+  background:linear-gradient(90deg, rgba(60,30,15,0.9), rgba(200,70,20,0.95), rgba(255,170,70,1)); transition:width .12s linear; }
+#burnScan { position:absolute; top:0; bottom:0; width:18%; background:linear-gradient(90deg, transparent, rgba(255,220,160,0.7), transparent); animation:burnScanMove 1.6s linear infinite; }
+@keyframes burnScanMove { 0%{left:-20%} 100%{left:102%} }
+#controls { position:absolute; bottom:3.5%; left:50%; transform:translateX(-50%); display:flex; gap:12px; z-index:20; }
+.ctrl-btn { padding:11px 26px; background:rgba(120,160,190,0.05); border:1px solid rgba(140,180,210,0.28);
+  color:#9fc4dd; font-size:11px; letter-spacing:2px; cursor:pointer; text-transform:uppercase; transition:all 0.25s; font-family:inherit; }
+.ctrl-btn:hover { background:rgba(140,180,210,0.14); box-shadow:0 0 14px rgba(120,160,200,0.18); color:#cfe6f5; transform:translateY(-1px); }
+.ctrl-btn.active { background:rgba(140,180,210,0.2); border-color:rgba(170,210,235,0.6); }
+.ctrl-btn.danger { border-color:rgba(200,90,70,0.4); color:#d98a78; background:rgba(200,90,70,0.05); }
+.ctrl-btn.danger:hover { background:rgba(200,90,70,0.16); box-shadow:0 0 14px rgba(200,90,70,0.25); color:#f0b3a4; }
+.hud-hint { position:absolute; bottom:9.5%; left:50%; transform:translateX(-50%);
+  color:rgba(160,190,215,0.42); font-size:10px; letter-spacing:1.5px; white-space:nowrap;
+  background:rgba(10,16,26,0.35); border:1px solid rgba(140,180,210,0.12); padding:5px 14px; }
+.hud-hint b { color:rgba(210,230,245,0.75); font-weight:600; }
+#vignette { position:absolute; inset:0; pointer-events:none; z-index:5; background:radial-gradient(circle, transparent 42%, rgba(0,0,0,0.92) 100%); }
+#grain { position:absolute; inset:0; pointer-events:none; z-index:14; opacity:0.09;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.2' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:200px 200px; animation:grainShift 0.4s steps(5) infinite; }
+#grain-fine { position:absolute; inset:0; pointer-events:none; z-index:14; opacity:0.05;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='5.0' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:140px 140px; animation:grainShift2 0.22s steps(3) infinite; }
+@keyframes grainShift { 0%{transform:translate(0,0)} 25%{transform:translate(-2%,1%)} 50%{transform:translate(1%,-1%)} 75%{transform:translate(-1%,-2%)} 100%{transform:translate(1%,1%)} }
+@keyframes grainShift2 { 0%{transform:translate(0,0)} 50%{transform:translate(1.5%,-1.5%)} 100%{transform:translate(-1%,1%)} }
+#film-tint { position:absolute; inset:0; pointer-events:none; z-index:13; background:rgba(54,36,18,0.13); mix-blend-mode:multiply; }
+#film-tint-grain { position:absolute; inset:0; pointer-events:none; z-index:13; opacity:0.06; mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='3.0' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:170px 170px; animation:grainShift 1.3s steps(6) infinite; }
+#film-leak { position:absolute; inset:0; pointer-events:none; z-index:13; opacity:0.06; mix-blend-mode:screen;
+  background:radial-gradient(120% 80% at -10% -10%, rgba(255,150,70,0.6), transparent 45%),
+             radial-gradient(120% 80% at 110% 110%, rgba(255,110,60,0.5), transparent 45%);
+  animation:leakPulse 9s ease-in-out infinite; }
+@keyframes leakPulse { 0%,100%{opacity:0.04} 50%{opacity:0.09} }
+#film-flicker { position:absolute; inset:0; pointer-events:none; z-index:15; background:#000; mix-blend-mode:overlay; animation:flicker 0.13s infinite; }
+@keyframes flicker { 0%{opacity:0.02} 20%{opacity:0.05} 40%{opacity:0.01} 60%{opacity:0.06} 80%{opacity:0.02} 100%{opacity:0.04} }
+#film-scratch { position:absolute; inset:0; pointer-events:none; z-index:16; opacity:0.10;
+  background:repeating-linear-gradient(90deg, transparent 0 38px, rgba(255,255,255,0.05) 38px 39px, transparent 39px 120px, rgba(255,255,255,0.08) 120px 121px, transparent 121px 300px);
+  animation:scratchMove 7s linear infinite; }
+@keyframes scratchMove { 0%{transform:translateX(0)} 100%{transform:translateX(300px)} }
+#film-dust { position:absolute; inset:0; pointer-events:none; z-index:16; opacity:0.06; mix-blend-mode:screen;
+  background:
+    radial-gradient(circle at 18% 32%, rgba(255,255,255,0.5) 0 1px, transparent 2px),
+    radial-gradient(circle at 72% 64%, rgba(255,255,255,0.4) 0 1px, transparent 2px),
+    radial-gradient(circle at 44% 81%, rgba(255,255,255,0.35) 0 1px, transparent 2px),
+    radial-gradient(circle at 88% 18%, rgba(255,255,255,0.4) 0 1px, transparent 2px);
+  animation:dustDrift 11s linear infinite; }
+@keyframes dustDrift { 0%{transform:translate(0,0)} 100%{transform:translate(-30px,20px)} }
+.cinema-bar { position:absolute; left:0; right:0; height:6vh; background:#000; z-index:17; pointer-events:none; }
+.cinema-bar.top { top:0; } .cinema-bar.bot { bottom:0; }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+}}
+</script>
+</head>
+<body>
+<div id="hud">
+  <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+  <div class="hud-text" id="hudMain">APPROACH VECTOR LOCKED</div>
+  <div class="hud-sub" id="hudSub">LEVIATHAN CHARGING — FREE FLIGHT · [V] DEBUG MARKERS</div>
+  <div class="hud-data">VELOCITY: <b><span id="vel">14200</span></b> KM/S<br>DISTANCE: <b><span id="dist">∞</span></b> KM<br>HULL: <b>100%</b><br>CREW: <b>CONSUMED</b></div>
+  <div class="hud-data-right">SECTOR: <b>KOPRULU-9</b><br>TARGET: <b>SATELLITE CORE</b><br>MODE: <b><span id="mode">APPROACH</span></b><br>LEVI: <b><span id="levi">STANDBY</span></b><br>CRUST: <b><span id="crust">0 / 0 / 0</span></b><br>PARTICLES: <b><span id="pcount">0</span></b></div>
+  <div id="burnWrap">
+    <div id="burnLabel">THERMAL FRONT — SATELLITE BURN</div>
+    <div id="burnPct">0</div>
+    <div id="burnTrack"><div id="burnFill"></div><div id="burnScan"></div></div>
+  </div>
+  <div class="hud-hint"><b>W A S D</b> полёт · <b>Q / E</b> вниз / вверх · <b>Shift</b> форсаж · <b>мышь</b> обзор · <b>V</b> метки удара</div>
+</div>
+<div id="controls">
+  <button class="ctrl-btn" id="btnFree">AUTO ORBIT</button>
+  <button class="ctrl-btn danger" id="btnImpact">INITIATE IMPACT</button>
+  <button class="ctrl-btn active" id="btnTension">TENSION FX</button>
+  <button class="ctrl-btn" id="btnReset">RESET</button>
+</div>
+<div id="vignette"></div>
+<div id="film-tint"></div>
+<div id="film-tint-grain"></div>
+<div id="film-leak"></div>
+<div id="grain"></div>
+<div id="grain-fine"></div>
+<div id="film-flicker"></div>
+<div id="film-scratch"></div>
+<div id="film-dust"></div>
+<div class="cinema-bar top"></div><div class="cinema-bar bot"></div>
+
+<script type="module">
+/* ═══════════════════════════════════════════════════════════════════════════════
+   v28 TRUEFRAG
+   Локаль = R(-planetRot)*W [МИНУС]; Мир = local.applyAxisAngle(Y,+planetRot) [ПЛЮС].
+   Эффекты удара — дети earthPlanet (локаль) => прилипают к коре.
+   НЕТ СПИЦ: scorch без азимута/ворлея (рваность = 3D-шум от p); вспышка = гладкий
+   гауссов блик в шейдере (без частиц-спиц); огненные частицы vel=0.
+   АТМОСФЕРА: альфа-колокол => 0 на краю меша => растворяется в космос.
+   minScorch: даже мелкий/средний удар оставляет видимый ожог (растёт с фронтом).
+   ГРИБ: потолок stemH/capR в долях R => не перекрывает атмосферу.
+   ФРАГМЕНТАЦИЯ: scale кусков ВСЕГДА 1 (кусок = дыра); откол по ВСЕЙ задней
+   полусфере, рандом размеров; SH=IMP_N=16 чтобы хватило слотов.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const noiseChunk = `
+vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
+vec4 mod289(vec4 x){return x-floor(x*(1.0/289.0))*289.0;}
+vec4 permute(vec4 x){return mod289(((x*34.0)+1.0)*x);}
+vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}
+float snoise(vec3 v){
+  const vec2 C=vec2(1.0/6.0,1.0/3.0); const vec4 D=vec4(0.0,0.5,1.0,2.0);
+  vec3 i=floor(v+dot(v,C.yyy)); vec3 x0=v-i+dot(i,C.xxx);
+  vec3 g=step(x0.yzx,x0.xyz); vec3 l=1.0-g;
+  vec3 i1=min(g.xyz,l.zxy); vec3 i2=max(g.xyz,l.zxy);
+  vec3 x1=x0-i1+C.xxx; vec3 x2=x0-i2+C.yyy; vec3 x3=x0-D.yyy;
+  i=mod289(i);
+  vec4 p=permute(permute(permute(i.z+vec4(0.0,i1.z,i2.z,1.0))+i.y+vec4(0.0,i1.y,i2.y,1.0))+i.x+vec4(0.0,i1.x,i2.x,1.0));
+  float n_=0.142857142857; vec3 ns=n_*D.wyz-D.xzx;
+  vec4 j=p-49.0*floor(p*ns.z*ns.z); vec4 x_=floor(j*ns.z); vec4 y_=floor(j-7.0*x_);
+  vec4 x=x_*ns.x+ns.yyyy; vec4 y=y_*ns.x+ns.yyyy; vec4 h=1.0-abs(x)-abs(y);
+  vec4 b0=vec4(x.xy,y.xy); vec4 b1=vec4(x.zw,y.zw);
+  vec4 s0=floor(b0)*2.0+1.0; vec4 s1=floor(b1)*2.0+1.0; vec4 sh=-step(h,vec4(0.0));
+  vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy; vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;
+  vec3 p0=vec3(a0.xy,h.x); vec3 p1=vec3(a0.zw,h.y); vec3 p2=vec3(a1.xy,h.z); vec3 p3=vec3(a1.zw,h.w);
+  vec4 norm=taylorInvSqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));
+  p0*=norm.x; p1*=norm.y; p2*=norm.z; p3*=norm.w;
+  vec4 m=max(0.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.0); m=m*m;
+  return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));
+}
+float fbm(vec3 x,int o){ float v=0.0,a=0.5; vec3 s=vec3(100.0);
+  for(int i=0;i<8;i++){ if(i>=o)break; v+=a*snoise(x); x=x*2.02+s; a*=0.5; } return v; }
+float crater(vec3 p,vec3 c,float r){ float d=length(p-c);
+  float rim=smoothstep(r*0.7,r,d)-smoothstep(r,r*1.3,d); float bowl=smoothstep(r,0.0,d)*0.3;
+  return rim*0.25-bowl*0.15; }
+vec3 hash3(vec3 p){
+  p=vec3(dot(p,vec3(127.1,311.7,74.7)),dot(p,vec3(269.5,183.3,246.1)),dot(p,vec3(113.5,271.9,124.6)));
+  return fract(sin(p)*43758.5453);
+}
+vec2 worley(vec3 P){
+  vec3 i=floor(P); vec3 f=fract(P);
+  float d1=8.0,d2=8.0;
+  for(int x=-1;x<=1;x++)for(int y=-1;y<=1;y++)for(int z=-1;z<=1;z++){
+    vec3 n=vec3(float(x),float(y),float(z));
+    vec3 r=n+hash3(i+n)-f;
+    float d=dot(r,r);
+    if(d<d1){d2=d1;d1=d;} else if(d<d2){d2=d;}
+  }
+  return vec2(sqrt(d1),sqrt(d2));
+}
+`;
+
+function jsNoise(x,y,z){ return Math.sin(x*1.7+y*0.9)*0.5 + Math.sin(y*2.3-z*1.3)*0.3 + Math.sin(z*3.1+x*0.7)*0.2; }
+function fbmJS(x,y,z){ let v=0,a=0.5;
+  for(let i=0;i<4;i++){ v+=a*(Math.sin(x*1.7+y*0.9)+Math.sin(y*2.3-z*1.3)+Math.sin(z*3.1+x*0.7))/3.0; x*=2.03+1.1; y*=2.03+2.2; z*=2.03+3.3; a*=0.5; } return v; }
+const _up1=new THREE.Vector3(0,1,0), _up2=new THREE.Vector3(1,0,0);
+function tangentOffset(d, amp){
+  const up = Math.abs(d.y)<0.9 ? _up1 : _up2;
+  const t1 = new THREE.Vector3().crossVectors(d, up).normalize();
+  const t2 = new THREE.Vector3().crossVectors(d, t1).normalize();
+  const a = jsNoise(d.x*4.1+11.3, d.y*4.1+23.7, d.z*4.1+31.1)*amp;
+  const b = jsNoise(d.x*4.7+47.9, d.y*4.7+59.2, d.z*4.7+67.5)*amp;
+  return t1.multiplyScalar(a).add(t2.multiplyScalar(b));
+}
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 1, 60000);
+const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.95;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.5, 0.5, 0.9);
+composer.addPass(bloom);
+
+const ShockShader = {
+  uniforms:{ tDiffuse:{value:null}, uAber:{value:0.0}, uCenter:{value:new THREE.Vector2(0.5,0.5)},
+    uRing:{value:0.0}, uRingStr:{value:0.0},
+    uPunchCenter:{value:new THREE.Vector2(0.5,0.5)}, uPunchStr:{value:0.0} },
+  vertexShader:`varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+  fragmentShader:`
+    uniform sampler2D tDiffuse; uniform float uAber; uniform vec2 uCenter; uniform float uRing; uniform float uRingStr;
+    uniform vec2 uPunchCenter; uniform float uPunchStr;
+    varying vec2 vUv;
+    void main(){
+      vec2 uv0 = vUv;
+      vec2 toP = uv0 - uPunchCenter; float pd = length(toP);
+      float punch = exp(-pd*pd/0.012) * uPunchStr;
+      uv0 += (pd>0.0001 ? toP/pd : vec2(0.0)) * punch * 0.018;
+      vec2 toC = uv0 - uCenter; float dC = length(toC); vec2 dirC = toC / max(dC, 0.001);
+      float band = exp(-pow((dC - uRing)/0.05, 2.0)) + 0.5*exp(-pow((dC - uRing*0.7)/0.04, 2.0));
+      uv0 += dirC * band * uRingStr;
+      vec2 dir = uv0 - 0.5; float d = length(dir); vec2 off = dir * uAber * (0.4 + d*1.2);
+      float r = texture2D(tDiffuse, uv0 + off).r;
+      float g = texture2D(tDiffuse, uv0).g;
+      float b = texture2D(tDiffuse, uv0 - off).b;
+      vec3 col = vec3(r,g,b);
+      col += vec3(1.0,0.85,0.6) * punch * 0.5;
+      gl_FragColor = vec4(col, 1.0);
+    }`
+};
+const shockPass = new ShaderPass(ShockShader);
+composer.addPass(shockPass);
+composer.addPass(new OutputPass());
+
+const sunDir = new THREE.Vector3(0.8, 0.3, 0.5).normalize();
+const sun = new THREE.DirectionalLight(0xfff4e6, 2.6);
+sun.position.copy(sunDir.clone().multiplyScalar(1000));
+sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.near = 1; sun.shadow.camera.far = 3200;
+sun.shadow.camera.left = -700; sun.shadow.camera.right = 700; sun.shadow.camera.top = 700; sun.shadow.camera.bottom = -700;
+sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.6;
+scene.add(sun); scene.add(sun.target);
+scene.add(new THREE.AmbientLight(0x141a28, 0.34));
+
+const SUN_DIST = 8200;
+const sunDiscMat = new THREE.ShaderMaterial({
+  transparent:true, depthWrite:false, depthTest:true, fog:false, blending:THREE.AdditiveBlending,
+  uniforms:{ uCol:{value:new THREE.Color(1.0,0.95,0.82)} },
+  vertexShader:`varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+  fragmentShader:`varying vec2 vUv; uniform vec3 uCol;
+    void main(){ float d=distance(vUv,vec2(0.5))*2.0;
+      float edge=smoothstep(1.0,0.5,d);
+      float core=smoothstep(0.16,0.0,d);
+      float glow=exp(-pow(d*2.2,2.0))*0.9;
+      float a=(core*3.0+glow)*edge;
+      gl_FragColor=vec4(uCol*a, a); }`
+});
+const sunSprite = new THREE.Mesh(new THREE.PlaneGeometry(1700,1700), sunDiscMat);
+sunSprite.position.copy(sunDir.clone().multiplyScalar(SUN_DIST));
+sunSprite.renderOrder = -1; scene.add(sunSprite);
+
+const nebMat = new THREE.ShaderMaterial({
+  side: THREE.BackSide, depthWrite:false, fog:false,
+  vertexShader:`varying vec3 vD; void main(){ vD=normalize(position); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+  fragmentShader:`varying vec3 vD; ${noiseChunk}
+    void main(){
+      vec3 base=vec3(0.002,0.003,0.008); float tex=fbm(vD*2.5,5)*0.5+0.5;
+      float w1=pow(max(dot(vD,normalize(vec3( 0.7, 0.4, 0.3))),0.0),5.0);
+      float w2=pow(max(dot(vD,normalize(vec3(-0.6,-0.3, 0.6))),0.0),5.0);
+      float w3=pow(max(dot(vD,normalize(vec3(-0.3, 0.7,-0.5))),0.0),6.0);
+      float w4=pow(max(dot(vD,normalize(vec3( 0.2,-0.6,-0.7))),0.0),4.0);
+      vec3 c1=vec3(0.25,0.08,0.04)*w1*(0.6+tex); vec3 c2=vec3(0.05,0.12,0.28)*w2*(0.6+tex);
+      vec3 c3=vec3(0.18,0.05,0.22)*w3*(0.6+tex); vec3 c4=vec3(0.08,0.18,0.12)*w4*(0.6+tex);
+      float fil=fbm(vD*1.8+vec3(3.0),5)*0.5+0.5;
+      gl_FragColor=vec4(base+(c1+c2+c3+c4)*0.8*fil,1.0);
+    }`
+});
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(14000, 48, 48), nebMat));
+
+function makeStars(count, rMin, rMax){
+  const pos=[], sz=[], col=[]; let made=0, guard=0;
+  while(made<count && guard<count*8){ guard++;
+    const t=Math.random()*6.2832, p=Math.acos(2*Math.random()-1);
+    const dx=Math.sin(p)*Math.cos(t), dy=Math.cos(p), dz=Math.sin(p)*Math.sin(t);
+    const dens=fbmJS(dx*2.2+5.0, dy*2.2+9.0, dz*2.2+3.0)*0.5+0.5;
+    if(Math.random() > 0.25 + dens*dens*0.75) continue;
+    const r=rMin+Math.random()*(rMax-rMin);
+    pos.push(dx*r, dy*r, dz*r); sz.push(0.7+Math.random()*0.9);
+    const temp=Math.random(), bright=0.5+Math.random()*0.5;
+    col.push((temp<0.5?1.0:0.85)*bright, (0.88+temp*0.1)*bright, (temp<0.5?0.8:1.0)*bright); made++;
+  }
+  return { pos:new Float32Array(pos), sz:new Float32Array(sz), col:new Float32Array(col) };
+}
+function starsPoints(data){
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(data.pos,3));
+  g.setAttribute('size',new THREE.BufferAttribute(data.sz,1));
+  g.setAttribute('aCol',new THREE.BufferAttribute(data.col,3));
+  return new THREE.Points(g, new THREE.ShaderMaterial({ fog:false,
+    vertexShader:`attribute float size; attribute vec3 aCol; varying vec3 vC;
+      void main(){ vC=aCol; vec4 mv=modelViewMatrix*vec4(position,1.0);
+      gl_PointSize=size*(1500.0/-mv.z); gl_Position=projectionMatrix*mv; }`,
+    fragmentShader:`varying vec3 vC; void main(){ float d=distance(gl_PointCoord,vec2(0.5));
+      if(d>0.5)discard; float a=smoothstep(0.5,0.10,d); gl_FragColor=vec4(vC, a); }`,
+    transparent:true, depthWrite:false, blending:THREE.AdditiveBlending }));
+}
+scene.add(starsPoints(makeStars(16000, 9000, 13000)));
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ГЕОМЕТРИЯ СЦЕНЫ
+   ═══════════════════════════════════════════════════════════════════════════════ */
+const PLANET_POS = new THREE.Vector3(2800, -900, -4200);
+const PLANET_R = 1150;
+const EARTH_GM = 1.5e8;
+const R = 100, RIN_BASE = 78;
+const BURN_SPEED = 0.55;
+const DETACH_ZONE = 1.35;
+const DETACH_EDGE = 0.12;
+const earthDir = PLANET_POS.clone().normalize();
+const IMPACT_DIR = earthDir.clone().negate();
+const IMPACT_WORLD = IMPACT_DIR.clone().multiplyScalar(R);
+const ANTIP = IMPACT_DIR.clone().negate();
+
+const APPROACH_DIR = IMPACT_DIR.clone();
+const APPROACH_DIST = 1500;
+const CONTACT_DIST = R + 90;
+const perpA = new THREE.Vector3();
+if(Math.abs(APPROACH_DIR.y)<0.9) perpA.crossVectors(APPROACH_DIR, new THREE.Vector3(0,1,0)).normalize();
+else perpA.set(1,0,0);
+const perpB = new THREE.Vector3().crossVectors(APPROACH_DIR, perpA).normalize();
+const X_AXIS = new THREE.Vector3(1,0,0);
+const baseQ = new THREE.Quaternion().setFromUnitVectors(X_AXIS, earthDir);
+const ORBIT_POS = perpA.clone().multiplyScalar(240).addScaledVector(perpB,160).add(new THREE.Vector3(0,90,0));
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   РЕЕСТР УДАРОВ (локаль) + SCORCH + ОБЛАЧНАЯ ПРОПЛЕШИНА + МЕТКИ   (SH=16)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+let planetRot = 0;
+const SH=16;
+const uShockDirL = Array.from({length:SH},()=>new THREE.Vector3(0,1,0));
+const uShockFront = new Array(SH).fill(0);
+const uShockWidth = new Array(SH).fill(0);
+const uShockInt   = new Array(SH).fill(0);
+const uShockDust  = new Array(SH).fill(0);
+const uScorchDir   = Array.from({length:SH},()=>new THREE.Vector3(0,1,0));
+const uScorchFront = new Array(SH).fill(0);
+const uScorchOn    = new Array(SH).fill(0);
+const uCloudClear = new Array(SH).fill(0);
+const cloudT   = new Array(SH).fill(-1);
+const cloudMag = new Array(SH).fill(0);
+const uMarkDir = Array.from({length:SH},()=>new THREE.Vector3(0,1,0));
+const uMarkOn  = new Array(SH).fill(0);
+let debugOn = false;
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ПЛАНЕТА ЗЕМЛЯ — биомы + SCORCH (3D-шум, БЕЗ азимута/ворлея) + гладкий блик
+   ═══════════════════════════════════════════════════════════════════════════════ */
+const earthMat = new THREE.ShaderMaterial({
+  uniforms:{ uTime:{value:0}, uSunDir:{value:sunDir.clone()}, uDebug:{value:0},
+    uShockDir:{value:uShockDirL}, uShockFront:{value:uShockFront}, uShockWidth:{value:uShockWidth}, uShockDust:{value:uShockDust},
+    uShockInt:{value:uShockInt},
+    uScorchDir:{value:uScorchDir}, uScorchFront:{value:uScorchFront}, uScorchOn:{value:uScorchOn},
+    uMarkDir:{value:uMarkDir}, uMarkOn:{value:uMarkOn} },
+  vertexShader:`
+    varying vec3 vNw; varying vec3 vLocal; varying vec3 vView;
+    void main(){
+      vNw=normalize(mat3(modelMatrix)*normal); vLocal=normalize(position);
+      vec4 wp=modelMatrix*vec4(position,1.0); vView=normalize(cameraPosition-wp.xyz);
+      gl_Position=projectionMatrix*viewMatrix*wp;
+    }`,
+  fragmentShader:`
+    uniform float uTime; uniform vec3 uSunDir; uniform float uDebug;
+    uniform vec3 uShockDir[${SH}]; uniform float uShockFront[${SH}]; uniform float uShockWidth[${SH}]; uniform float uShockDust[${SH}];
+    uniform float uShockInt[${SH}];
+    uniform vec3 uScorchDir[${SH}]; uniform float uScorchFront[${SH}]; uniform float uScorchOn[${SH}];
+    uniform vec3 uMarkDir[${SH}]; uniform float uMarkOn[${SH}];
+    varying vec3 vNw; varying vec3 vLocal; varying vec3 vView;
+    ${noiseChunk}
+    void main(){
+      vec3 N=normalize(vNw); vec3 L=normalize(uSunDir); vec3 V=normalize(vView);
+      float diff=max(dot(N,L),0.0);
+      float lit=smoothstep(-0.04,0.12,diff);
+      vec3 p=normalize(vLocal);
+      float lat=p.y;
+      float cont=fbm(p*2.2+vec3(3.7),6)*0.5+0.5;
+      float detail=fbm(p*5.5+vec3(1.2),5)*0.5+0.5;
+      float micro=fbm(p*12.0,4)*0.5+0.5;
+      float landMask=smoothstep(0.44,0.56, cont*0.7+detail*0.3);
+      vec3 oceanDeep=vec3(0.01,0.04,0.14);
+      vec3 oceanShallow=vec3(0.02,0.10,0.22);
+      float oceanVar=fbm(p*8.0+vec3(uTime*0.002),4)*0.5+0.5;
+      vec3 ocean=mix(oceanDeep,oceanShallow,oceanVar*0.5+detail*0.3);
+      vec3 forest=vec3(0.03,0.09,0.025); vec3 grassland=vec3(0.08,0.11,0.03); vec3 desert=vec3(0.20,0.16,0.08);
+      vec3 mountain=vec3(0.12,0.10,0.08); vec3 snow=vec3(0.55,0.58,0.62); vec3 tundra=vec3(0.10,0.11,0.09);
+      float elev=fbm(p*4.0+vec3(7.7),6)*0.5+0.5;
+      float moisture=fbm(p*3.0+vec3(13.3),5)*0.5+0.5;
+      float absLat=abs(lat);
+      vec3 land=mix(forest,grassland,smoothstep(0.4,0.6,moisture));
+      land=mix(land,desert,smoothstep(0.7,0.9,fbm(p*3.5+vec3(5.0),4))*smoothstep(0.0,0.35,absLat));
+      land=mix(land,mountain,smoothstep(0.6,0.8,elev));
+      land=mix(land,snow,smoothstep(0.82,0.92,elev));
+      land=mix(land,tundra,smoothstep(0.6,0.8,absLat));
+      land=mix(land,snow,smoothstep(0.82,0.95,absLat));
+      land*=0.7+micro*0.3;
+      float ridge=abs(fbm(p*7.0+vec3(2.0),5));
+      float ridgeMask=smoothstep(0.0,0.15,ridge)*smoothstep(0.55,0.75,elev)*landMask;
+      land=mix(land,vec3(0.16,0.13,0.10),ridgeMask*0.6);
+      land+=vec3(0.08,0.07,0.06)*(1.0-smoothstep(0.0,0.02,ridge))*landMask*smoothstep(0.5,0.7,elev);
+      vec3 col=mix(ocean,land,landMask);
+      float coast=1.0-smoothstep(0.0,0.025,abs(cont*0.7+detail*0.3-0.50));
+      col=mix(col,vec3(0.22,0.20,0.14),coast*0.5);
+
+      // ══ ВСПЫШКА: гладкий гауссов блик по углу (БЕЗ частиц => БЕЗ спиц) ══
+      for(int i=0;i<${SH};i++){
+        float inten=uShockInt[i]; if(inten<0.001) continue;
+        float bang=acos(clamp(dot(p,uScorchDir[i]),-1.0,1.0));
+        float w=uShockFront[i]*0.55+0.03;
+        float glow=exp(-bang*bang/(w*w))*inten;
+        col+=vec3(1.0,0.62,0.28)*glow*0.85;
+      }
+
+      // ══ SCORCH: рваность через 3D-шум от p (НЕ периодичен вокруг эпицентра) ══
+      float behindMax=0.0;
+      for(int i=0;i<${SH};i++){
+        if(uScorchOn[i]<0.5) continue;
+        float sfr=uScorchFront[i]; if(sfr<0.001) continue;
+        vec3 sd=uScorchDir[i];
+        float bang=acos(clamp(dot(p,sd),-1.0,1.0));
+        float rag=fbm(p*6.0+sd*2.0,4)*0.5+0.5;
+        float bfront=sfr*(0.78+0.44*rag);
+        float behind=smoothstep(bfront, bfront-0.16, bang)*step(bang, sfr*1.05);
+        behindMax=max(behindMax,behind);
+        float nrmC=clamp(bang/max(sfr,0.001),0.0,1.0);
+        float emberMask=smoothstep(0.40,0.70, fbm(p*9.0+sd*3.0,3)*0.5+0.5 );
+        float fline=exp(-pow((bang-bfront)/0.035,2.0))*emberMask;
+        float bowl=smoothstep(0.55,0.0,nrmC);
+        float rim =smoothstep(0.62,0.86,nrmC)*(1.0-smoothstep(0.90,1.0,nrmC));
+        vec3 bowlCol=vec3(0.006,0.005,0.004);
+        vec3 rimCol =vec3(0.055,0.045,0.038);
+        vec3 charred=mix(vec3(0.012,0.009,0.007),vec3(0.030,0.024,0.020),micro);
+        float fiss=smoothstep(0.58,0.74, fbm(p*22.0+sd*5.0,4)*0.5+0.5 )*bowl;
+        col=mix(col, charred, behind*0.95);
+        col=mix(col, bowlCol, behind*bowl*0.6);
+        col=mix(col, rimCol,  behind*rim*0.7);
+        col+=vec3(1.0,0.42,0.10)*fline*1.3;
+        col+=vec3(0.5,0.12,0.03)*fiss*0.45;
+        float coreG=exp(-bang*bang/(max(sfr*0.30,0.004)*max(sfr*0.30,0.004)))*0.45;
+        col+=vec3(0.5,0.12,0.03)*coreG*0.5;
+      }
+
+      float nightBase=0.06; vec3 nightTint=vec3(0.008,0.010,0.020);
+      col=col*(nightBase+(1.0-nightBase)*lit)+nightTint*(1.0-lit);
+      float civRegion=smoothstep(0.35,0.60,fbm(p*3.0+vec3(2.0),4));
+      float cityDot=smoothstep(0.70,0.84,snoise(p*30.0));
+      float cityClust=smoothstep(0.50,0.72,snoise(p*14.0));
+      float cities=cityDot*cityClust*civRegion*landMask*(1.0-behindMax);
+      vec3 cityCol=mix(vec3(1.0,0.65,0.25),vec3(1.0,0.85,0.5),cityClust);
+      col+=cityCol*cities*(1.0-lit)*2.8; col+=cityCol*cities*0.08*lit;
+      vec3 Rf=reflect(-L,N); float spec=pow(max(dot(Rf,V),0.0),120.0);
+      col+=vec3(1.0,0.95,0.8)*spec*(1.0-landMask)*lit*1.5;
+      float rim=pow(1.0-max(dot(N,V),0.0),4.0);
+      col+=vec3(0.25,0.45,0.8)*rim*0.35*lit;
+      vec3 dustWallC=vec3(0.42,0.32,0.22);
+      for(int i=0;i<${SH};i++){
+        float dw=uShockDust[i]; if(dw<0.001) continue;
+        float ang=acos(clamp(dot(p,uShockDir[i]),-1.0,1.0));
+        float fr=uShockFront[i]; float fw=uShockWidth[i];
+        float wall=exp(-pow((ang-fr)/(fw*2.2+0.004),2.0))*dw;
+        col=mix(col, dustWallC, wall*0.7);
+        col+=vec3(1.0,0.5,0.2)*wall*0.4;
+      }
+      if(uDebug>0.5){
+        for(int i=0;i<${SH};i++){
+          if(uMarkOn[i]<0.5) continue;
+          float ma=acos(clamp(dot(p,uMarkDir[i]),-1.0,1.0));
+          col+=vec3(0.1,1.0,0.35)*exp(-ma*ma/0.0006)*2.0;
+          col+=vec3(0.1,1.0,0.45)*exp(-pow((ma-0.025)/0.0025,2.0))*1.2;
+          col+=vec3(0.1,1.0,0.45)*exp(-pow((ma-0.06)/0.0025,2.0))*0.7;
+        }
+      }
+      gl_FragColor=vec4(col,1.0);
+    }`
+});
+const earthPlanet = new THREE.Mesh(new THREE.SphereGeometry(PLANET_R, 128, 128), earthMat);
+earthPlanet.position.copy(PLANET_POS);
+scene.add(earthPlanet);
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ОБЛАКА — сдвиг фронтом + МЕДЛЕННО возвращающаяся проплешина по scorch
+   ═══════════════════════════════════════════════════════════════════════════════ */
+const cloudMat = new THREE.ShaderMaterial({
+  uniforms:{ uTime:{value:0}, uSunDir:{value:sunDir.clone()}, uDebug:{value:0},
+    uShockDir:{value:uShockDirL}, uShockFront:{value:uShockFront}, uShockWidth:{value:uShockWidth},
+    uShockInt:{value:uShockInt}, uShockDust:{value:uShockDust},
+    uScorchDir:{value:uScorchDir}, uScorchFront:{value:uScorchFront}, uCloudClear:{value:uCloudClear},
+    uMarkDir:{value:uMarkDir}, uMarkOn:{value:uMarkOn} },
+  vertexShader:`
+    varying vec3 vNw; varying vec3 vLocal; varying vec3 vView;
+    void main(){
+      vNw=normalize(mat3(modelMatrix)*normal); vLocal=normalize(position);
+      vec4 wp=modelMatrix*vec4(position,1.0); vView=normalize(cameraPosition-wp.xyz);
+      gl_Position=projectionMatrix*viewMatrix*wp;
+    }`,
+  fragmentShader:`
+    uniform float uTime; uniform vec3 uSunDir; uniform float uDebug;
+    uniform vec3 uShockDir[${SH}]; uniform float uShockFront[${SH}]; uniform float uShockWidth[${SH}];
+    uniform float uShockInt[${SH}]; uniform float uShockDust[${SH}];
+    uniform vec3 uScorchDir[${SH}]; uniform float uScorchFront[${SH}]; uniform float uCloudClear[${SH}];
+    uniform vec3 uMarkDir[${SH}]; uniform float uMarkOn[${SH}];
+    varying vec3 vNw; varying vec3 vLocal; varying vec3 vView;
+    ${noiseChunk}
+    void main(){
+      vec3 N=normalize(vNw); vec3 L=normalize(uSunDir); vec3 V=normalize(vView);
+      float diff=max(dot(N,L),0.0); float lit=smoothstep(-0.04,0.12,diff);
+      vec3 p=normalize(vLocal);
+      vec3 wp=normalize(p+vec3(uTime*0.004,0.0,uTime*0.003));
+      float c1=fbm(wp*3.0+vec3(uTime*0.008,0.0,uTime*0.005),6)*0.5+0.5;
+      float c2=fbm(wp*6.0+vec3(0.0,uTime*0.006,uTime*0.004),5)*0.5+0.5;
+      float c3=fbm(wp*11.0+vec3(uTime*0.003),4)*0.5+0.5;
+      float cloud=smoothstep(0.42,0.68, c1*0.5+c2*0.3+c3*0.2);
+      for(int i=0;i<4;i++){
+        float fi=float(i);
+        vec3 sCenter=normalize(vec3(sin(uTime*0.01+fi*1.6)*0.6, -0.3+fi*0.2, cos(uTime*0.008+fi*2.3)*0.6));
+        float sd=length(p-sCenter);
+        float spiral=atan(p.z-sCenter.z, p.x-sCenter.x)+sd*8.0-uTime*0.5*(1.0+fi*0.3);
+        float arm=1.0-smoothstep(0.0,0.5,abs(sin(spiral*1.5)));
+        float radial=(1.0-smoothstep(0.04,0.22,sd))*smoothstep(0.02,0.07,sd);
+        cloud=max(cloud, arm*radial*0.85);
+      }
+      float condRing=0.0; float dustPile=0.0; float innerGlow=0.0;
+      for(int i=0;i<${SH};i++){
+        float inten=uShockInt[i]; if(inten<0.001) continue;
+        float ang=acos(clamp(dot(p,uShockDir[i]),-1.0,1.0));
+        float fr=uShockFront[i]; float fw=uShockWidth[i];
+        float outer=smoothstep(fr+fw*1.3, fr, ang);
+        float inner=smoothstep(fr-fw*2.5, fr-fw*0.3, ang);
+        condRing+=outer*inner*inten;
+        dustPile+=exp(-pow((ang-fr)/(fw*1.4+0.003),2.0))*inten;
+        innerGlow+=exp(-pow(ang/(fr*0.5+0.02),2.0))*inten*0.6;
+      }
+      float clearing=0.0;
+      for(int i=0;i<${SH};i++){
+        float cc=uCloudClear[i]; if(cc<0.001) continue;
+        float sfr=uScorchFront[i]; if(sfr<0.001) continue;
+        float bang=acos(clamp(dot(p,uScorchDir[i]),-1.0,1.0));
+        clearing+=smoothstep(sfr*1.2, sfr*0.8, bang)*cc;
+      }
+      cloud*=max(0.0, 1.0-clamp(clearing,0.0,1.0));
+      float alpha=cloud*0.82;
+      vec3 cloudCol=vec3(0.95,0.96,0.98)*(0.15+lit*0.85);
+      cloudCol*=0.85+c3*0.15;
+      cloudCol+=vec3(1.0,0.98,0.94)*condRing*1.6;
+      cloudCol+=vec3(0.85,0.80,0.72)*dustPile*1.1;
+      cloudCol+=vec3(1.0,0.7,0.4)*innerGlow;
+      float sunset=pow(max(dot(N,L),0.0),0.5)*pow(1.0-abs(dot(N,V)),2.0);
+      cloudCol+=vec3(0.3,0.12,0.02)*sunset*0.3;
+      if(uDebug>0.5){
+        for(int i=0;i<${SH};i++){
+          if(uMarkOn[i]<0.5) continue;
+          float ma=acos(clamp(dot(p,uMarkDir[i]),-1.0,1.0));
+          cloudCol+=vec3(0.1,1.0,0.35)*exp(-ma*ma/0.0006)*1.6;
+        }
+      }
+      gl_FragColor=vec4(cloudCol, alpha*lit + alpha*0.06 + condRing*0.5);
+    }`,
+  transparent:true, side:THREE.FrontSide, depthWrite:false, fog:false
+});
+const cloudSphere = new THREE.Mesh(new THREE.SphereGeometry(PLANET_R*1.03, 96, 96), cloudMat);
+cloudSphere.position.copy(PLANET_POS);
+scene.add(cloudSphere);
+
+// атмосфера-колокол: альфа=0 на краю меша => растворяется в космос
+function makeEarthAtmo(){
+  const mat = new THREE.ShaderMaterial({
+    vertexShader:`varying vec3 vNw; varying vec3 vV; varying vec3 vWorld;
+      void main(){ vNw=normalize(mat3(modelMatrix)*normal); vec4 wp=modelMatrix*vec4(position,1.0); vWorld=wp.xyz;
+        vV=normalize(cameraPosition-wp.xyz); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+    fragmentShader:`
+      varying vec3 vNw; varying vec3 vV; varying vec3 vWorld;
+      uniform vec3 uSunDir; uniform float uTime;
+      ${noiseChunk}
+      void main(){
+        vec3 N=normalize(vNw); vec3 V=normalize(vV);
+        float ndv=max(dot(N,V),0.0);
+        float f=1.0-ndv;
+        float band=smoothstep(0.0,0.45,f)*(1.0-smoothstep(0.80,1.0,f));
+        float sunScatter=pow(max(dot(N,uSunDir),0.0),1.5);
+        vec3 wp=normalize(vWorld);
+        float drift=fbm(wp*2.2+vec3(uTime*0.01,0.0,uTime*0.007),4)*0.5+0.5;
+        vec3 col=mix(vec3(0.18,0.38,0.78),vec3(0.50,0.75,1.0),f);
+        col+=vec3(1.0,0.85,0.6)*sunScatter*band*0.4;
+        col*=0.85+drift*0.3;
+        float a=band*(0.6+sunScatter*0.5)*0.75*(0.8+drift*0.3);
+        gl_FragColor=vec4(col*a, a);
+      }`,
+    uniforms:{ uSunDir:{value:sunDir.clone()}, uTime:{value:0} },
+    transparent:true, side:THREE.BackSide, blending:THREE.AdditiveBlending, depthWrite:false, fog:false
+  });
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(PLANET_R*1.14, 96, 96), mat);
+  mesh.position.copy(PLANET_POS); scene.add(mesh);
+  return mat;
+}
+const atmo1 = makeEarthAtmo();
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   СПУТНИК
+   ═══════════════════════════════════════════════════════════════════════════════ */
+const dir3 = (t,p)=>new THREE.Vector3(Math.sin(t)*Math.cos(p), Math.cos(t), Math.sin(t)*Math.sin(p));
+
+function buildPatch(t0,t1,p0,p1){
+  const angW=t1-t0, angH=p1-p0;
+  const SU=Math.max(7, Math.min(13, Math.round(angW*14)));
+  const SV=Math.max(7, Math.min(13, Math.round(angH*14)));
+  const RINloc = RIN_BASE - Math.random()*12;
+  const pos=[], nrm=[], side=[], local=[], edge=[], idx=[];
+  const O=[], I=[];
+  const isEdge=(u,v)=>(u===0||u===SU||v===0||v===SV)?1.0:0.0;
+  for(let v=0;v<=SV;v++){ O[v]=[]; I[v]=[];
+    for(let u=0;u<=SU;u++){
+      const t=t0+angW*u/SU, p=p0+angH*v/SV, d=dir3(t,p).normalize();
+      const ef=1.0+isEdge(u,v)*1.1;
+      const dO=(jsNoise(d.x*3.0,d.y*3.0,d.z*3.0)*3.5 + jsNoise(d.x*7.0,d.y*7.0,d.z*7.0)*1.4)*ef;
+      const dI=jsNoise(d.x*2.0+5.0,d.y*2.0,d.z*2.0)*6.0*ef;
+      const tOff=tangentOffset(d, 6.5*ef);
+      const ro=R+dO, ri=RINloc-dI;
+      const ox=d.x*ro+tOff.x, oy=d.y*ro+tOff.y, oz=d.z*ro+tOff.z;
+      const ix=d.x*ri+tOff.x, iy=d.y*ri+tOff.y, iz=d.z*ri+tOff.z;
+      const e=isEdge(u,v);
+      const io=pos.length/3; pos.push(ox,oy,oz); nrm.push(d.x,d.y,d.z); side.push(0.0); local.push(d.x,d.y,d.z); edge.push(e); O[v][u]=io;
+      const ii=pos.length/3; pos.push(ix,iy,iz); nrm.push(d.x,d.y,d.z); side.push(1.0); local.push(d.x,d.y,d.z); edge.push(e); I[v][u]=ii;
+    }
+  }
+  const quad=(a,b,c,d)=>{ idx.push(a,b,c, a,c,d); };
+  for(let v=0;v<SV;v++) for(let u=0;u<SU;u++){
+    quad(O[v][u],O[v][u+1],O[v+1][u+1],O[v+1][u]);
+    quad(I[v][u],I[v+1][u],I[v+1][u+1],I[v][u+1]);
+  }
+  const pushCopy=(idxV)=>{ const i=pos.length/3;
+    pos.push(pos[idxV*3],pos[idxV*3+1],pos[idxV*3+2]);
+    const nx=pos[idxV*3], ny=pos[idxV*3+1], nz=pos[idxV*3+2];
+    const nl=Math.hypot(nx,ny,nz)||1; nrm.push(nx/nl,ny/nl,nz/nl);
+    side.push(1.0); local.push(nx/nl,ny/nl,nz/nl); edge.push(1.0); return i; };
+  const wall=(oa,ob,ia,ib)=>{ const ca=pushCopy(oa),cb=pushCopy(ob),cc=pushCopy(ib),cd=pushCopy(ia); idx.push(ca,cb,cc, ca,cc,cd); };
+  for(let v=0;v<SV;v++){ wall(O[v][0],O[v+1][0],I[v][0],I[v+1][0]); wall(O[v][SU],O[v+1][SU],I[v][SU],I[v+1][SU]); }
+  for(let u=0;u<SU;u++){ wall(O[0][u],O[0][u+1],I[0][u],I[0][u+1]); wall(O[SV][u],O[SV][u+1],I[SV][u],I[SV][u+1]); }
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos,3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(nrm,3));
+  g.setAttribute('aSide', new THREE.Float32BufferAttribute(side,1));
+  g.setAttribute('aLocal', new THREE.Float32BufferAttribute(local,3));
+  g.setAttribute('aEdge', new THREE.Float32BufferAttribute(edge,1));
+  g.setIndex(idx); g.computeBoundingSphere();
+  return { geo:g, area:angW*angH*(R-RINloc+10) };
+}
+
+const patchMat = new THREE.ShaderMaterial({
+  side: THREE.DoubleSide,
+  uniforms:{ uTime:{value:0}, uSpin:{value:0}, uImpact:{value:0}, uImpactDir:{value:IMPACT_DIR.clone()}, uSunDir:{value:sunDir.clone()} },
+  vertexShader:`
+    attribute float aSide; attribute vec3 aLocal; attribute float aEdge;
+    varying float vSide; varying vec3 vNw; varying vec3 vView; varying vec3 vWorld; varying vec3 vLocal; varying float vEdge;
+    void main(){
+      vSide=aSide; vLocal=aLocal; vEdge=aEdge;
+      vNw=normalize(mat3(modelMatrix)*normal);
+      vec4 wp=modelMatrix*vec4(position,1.0); vWorld=wp.xyz;
+      vView=normalize(cameraPosition-wp.xyz);
+      gl_Position=projectionMatrix*viewMatrix*wp;
+    }`,
+  fragmentShader:`
+    uniform float uTime; uniform float uSpin; uniform float uImpact; uniform vec3 uImpactDir; uniform vec3 uSunDir;
+    varying float vSide; varying vec3 vNw; varying vec3 vView; varying vec3 vWorld; varying vec3 vLocal; varying float vEdge;
+    ${noiseChunk}
+    void main(){
+      vec3 N=normalize(vNw); vec3 L=normalize(uSunDir); vec3 V=normalize(vView);
+      float lit=smoothstep(-0.06,0.16,dot(N,L));
+      float nightBase=0.10; vec3 nightTint=vec3(0.012,0.014,0.022);
+      vec3 sDir=normalize(vLocal);
+      float ad=acos(clamp(dot(sDir,uImpactDir),-1.0,1.0));
+      float burnFront=uImpact*0.550;
+      float behind=smoothstep(burnFront, burnFront-0.30, ad);
+      float frontLine=exp(-pow((ad-burnFront)/0.05,2.0))*step(0.001,uImpact);
+      float crackOn=smoothstep(ad-0.45, ad+0.05, burnFront)*step(0.001,uImpact);
+      float pulse=0.7+0.3*sin(uTime*1.6+ad*5.0);
+      vec2 wC=worley(sDir*9.0); float crackEdge=1.0-smoothstep(0.0,0.10,wC.y-wC.x);
+      vec2 wF=worley(sDir*4.5);
+      float cracks=max(crackEdge*0.7, 1.0-smoothstep(0.0,0.06,wF.y-wF.x));
+      vec3 crackCol=vec3(0.95,0.32,0.06);
+      if(vSide>0.5){
+        float rock=fbm(vLocal*6.0,6)*0.5+0.5; float micro=fbm(vLocal*22.0,4)*0.5+0.5;
+        vec3 col=mix(vec3(0.075,0.065,0.058),vec3(0.120,0.105,0.092),rock);
+        col=mix(col,vec3(0.055,0.050,0.046),smoothstep(0.4,0.72,fbm(vLocal*11.0,5)));
+        col*=0.5+rock*0.22+micro*0.12;
+        float lavaMask=smoothstep(0.62,0.70,cracks);
+        float bub=smoothstep(0.55,0.8,snoise(vLocal*8.0+vec3(0.0,uTime*0.15,0.0)));
+        vec3 lava=mix(vec3(0.55,0.10,0.02),vec3(1.0,0.5,0.12),bub);
+        col=mix(col,lava,lavaMask); col+=lava*lavaMask*0.8;
+        vec2 wCr=worley(vLocal*7.0+vec3(3.7,1.2,8.9));
+        float crM=(1.0-smoothstep(0.0,0.08,wCr.y-wCr.x))*smoothstep(0.55,0.75,cracks)*0.35;
+        vec3 crC=mix(vec3(0.45,0.12,0.55),vec3(0.10,0.55,0.50),sin(vLocal.x*12.0+uTime*0.3)*0.5+0.5);
+        col=mix(col,crC,crM); col+=crC*crM*1.2;
+        col=mix(col,vec3(0.018,0.011,0.009),behind*0.85);
+        col+=vec3(0.55,0.85,0.35)*smoothstep(0.75,0.95,snoise(vLocal*5.0+vec3(uTime*0.7)))*behind*0.25;
+        col+=vec3(0.55,0.12,0.02)*frontLine*0.6;
+        col=col*(nightBase+(1.0-nightBase)*lit)+nightTint*(1.0-lit);
+        gl_FragColor=vec4(col,1.0);
+      } else {
+        vec3 p=normalize(vLocal+vec3(uSpin,0.0,0.0));
+        float n1=fbm(p*2.8,6)*0.5+0.5, n2=fbm(p*7.0+vec3(5.2),6)*0.5+0.5;
+        float micro=fbm(p*16.0,4)*0.5+0.5, micro2=fbm(p*34.0,3)*0.5+0.5;
+        float cr=crater(p,vec3(0.8,0.3,0.1),0.18)+crater(p,vec3(-0.5,0.7,-0.2),0.12)
+                +crater(p,vec3(0.2,-0.6,0.4),0.14)+crater(p,vec3(-0.3,-0.2,0.8),0.10)
+                +crater(p,vec3(0.6,-0.4,-0.5),0.09)+crater(p,vec3(-0.7,0.1,0.6),0.15);
+        vec3 col=mix(vec3(0.11,0.10,0.09),vec3(0.18,0.17,0.15),n1);
+        col=mix(col,vec3(0.07,0.065,0.06),smoothstep(0.35,0.55,n2)*0.6);
+        col*=0.65+micro*0.25+micro2*0.12; col+=cr*vec3(0.06,0.05,0.04);
+        vec2 wS=worley(p*12.0); col=mix(col,col*0.5,(1.0-smoothstep(0.0,0.06,wS.y-wS.x))*0.3);
+        col=col*(nightBase+(1.0-nightBase)*lit)+nightTint*(1.0-lit);
+        vec3 Rf=reflect(-L,N); col+=vec3(0.6,0.55,0.5)*pow(max(dot(Rf,V),0.0),60.0)*lit*0.3;
+        col+=mix(vec3(0.95,0.30,0.05),vec3(1.0,0.65,0.20),frontLine)*frontLine*1.4;
+        col+=crackCol*cracks*crackOn*pulse*1.7;
+        col=mix(col,vec3(0.012,0.009,0.008)+vec3(0.22,0.05,0.012)*cracks*0.4,behind*0.92);
+        col+=vec3(0.5,0.12,0.02)*smoothstep(0.5,0.7,fbm(sDir*8.0+vec3(3.0),4))*frontLine*2.0;
+        col=mix(col,vec3(0.15,0.13,0.11),smoothstep(0.45,0.65,snoise(sDir*4.0+vec3(uTime*0.25,0.0,uTime*0.18)))*frontLine*0.6);
+        col+=vec3(0.40,0.65,0.25)*smoothstep(0.82,0.98,snoise(sDir*3.5+vec3(uTime*0.9)))*behind*0.18;
+        gl_FragColor=vec4(col,1.0);
+      }
+    }`
+});
+
+function makeBounds(n, total, mergeProb){
+  const w=[]; for(let i=0;i<n;i++) w.push(0.25+Math.random()*1.5);
+  const sum=w.reduce((a,b)=>a+b,0); let acc=0; const raw=[0];
+  for(let i=0;i<n;i++){ acc+=w[i]/sum*total; raw.push(acc); }
+  const out=[raw[0]];
+  for(let i=1;i<raw.length-1;i++){ if(Math.random()>mergeProb) out.push(raw[i]); }
+  out.push(raw[raw.length-1]); return out;
+}
+const phiB = makeBounds(30, Math.PI*2, 0.12);
+const thetaB = makeBounds(20, Math.PI, 0.12);
+const patches=[];
+for(let a=0;a<phiB.length-1;a++) for(let b=0;b<thetaB.length-1;b++){
+  const { geo, area } = buildPatch(thetaB[b],thetaB[b+1],phiB[a],phiB[a+1]);
+  const m=new THREE.Mesh(geo, patchMat);
+  m.castShadow=true; m.receiveShadow=true; scene.add(m);
+  patches.push({ mesh:m, c0:null, size:area, centerDir:dir3((thetaB[b]+thetaB[b+1])/2,(phiB[a]+phiB[a+1])/2).normalize(),
+    detached:false, tethered:false, activated:false, toEarth:false, isBig:false, rested:false,
+    blastSize:0, vel:new THREE.Vector3(), angVel:new THREE.Vector3() });
+}
+
+// ВСЯ задняя полусфера (dot>0), перемешана, рандом размеров (ячейки и так разные)
+const antipodePatches=[];
+{
+  const cand=[];
+  for(const pd of patches){ if(pd.centerDir.dot(ANTIP) > 0.02) cand.push(pd); }
+  for(let i=cand.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; const t=cand[i]; cand[i]=cand[j]; cand[j]=t; }
+  const TAKE=Math.min(20, cand.length);
+  for(let i=0;i<TAKE;i++) antipodePatches.push(cand[i]);
+}
+
+const coreMat = new THREE.ShaderMaterial({
+  uniforms:{ uTime:{value:0}, uDim:{value:1} },
+  vertexShader:`varying vec3 vL; void main(){ vL=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+  fragmentShader:`uniform float uTime; uniform float uDim; varying vec3 vL; ${noiseChunk}
+    void main(){ vec3 p=normalize(vL);
+      float conv=fbm(p*3.5-vec3(0.0,uTime*0.08,0.0),5)*0.5+0.5;
+      float veins=smoothstep(0.45,0.72,conv);
+      float bubble=smoothstep(0.55,0.78,snoise(p*5.0+vec3(0.0,uTime*0.12,0.0)))*smoothstep(0.4,0.7,conv);
+      vec3 col=mix(vec3(0.10,0.018,0.006),vec3(0.85,0.16,0.02),veins*0.8);
+      col=mix(col,vec3(1.0,0.5,0.12),bubble*0.9);
+      col*=0.7+0.3*sin(uTime*0.8+conv*6.0);
+      col*=uDim;
+      gl_FragColor=vec4(col,1.0); }`
+});
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(R*0.72, 96, 96), coreMat));
+const coreLight=new THREE.PointLight(0xff6622, 0, 600, 2);
+coreLight.position.set(0,0,0); scene.add(coreLight);
+
+const atmoMat = new THREE.ShaderMaterial({
+  vertexShader:`varying vec3 vNw; varying vec3 vV; varying vec3 vWorld; void main(){
+    vNw=normalize(mat3(modelMatrix)*normal); vec4 wp=modelMatrix*vec4(position,1.0);
+    vWorld=wp.xyz; vV=normalize(cameraPosition-wp.xyz);
+    gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+  fragmentShader:`varying vec3 vNw; varying vec3 vV; varying vec3 vWorld;
+    uniform vec3 uSunDir; uniform vec3 uImpactDir; uniform float uImpact;
+    void main(){
+      float f=pow(1.0-max(dot(normalize(vNw),normalize(vV)),0.0),3.5);
+      float sunS=pow(max(dot(normalize(vNw),uSunDir),0.0),2.0)*0.4;
+      float ad=acos(clamp(dot(normalize(vWorld),uImpactDir),-1.0,1.0));
+      float behind=smoothstep(uImpact*0.55, uImpact*0.55-0.30, ad);
+      float a=f*0.12*clamp(1.0-uImpact*0.2,0.0,1.0)*(1.0-behind*0.92);
+      gl_FragColor=vec4(vec3(0.30,0.32,0.38)*(f+f*sunS), a); }`,
+  uniforms:{ uSunDir:{value:sunDir}, uImpactDir:{value:IMPACT_DIR.clone()}, uImpact:{value:0} },
+  transparent:true, side:THREE.BackSide, blending:THREE.AdditiveBlending, depthWrite:false, fog:false });
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(R*1.05, 64, 64), atmoMat));
+
+/* ── КОЛЬЦО АСТЕРОИДОВ (радиальный разлёт от эпицентра) ── */
+const RING_N=400;
+const ringMesh=new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1,0),
+  new THREE.MeshStandardMaterial({color:0xffffff, roughness:1.0, metalness:0.02}), RING_N);
+ringMesh.castShadow=false; ringMesh.receiveShadow=false;
+ringMesh.frustumCulled=false;
+const _rcInit=new THREE.Color();
+const ringData=[];
+for(let i=0;i<RING_N;i++){
+  ringData.push({ angle:Math.random()*6.2832, radius:150+Math.random()*95, height:(Math.random()-0.5)*16,
+    orbitSpeed:0.05+Math.random()*0.09, size:0.4+Math.random()*1.7,
+    pos:new THREE.Vector3(), vel:new THREE.Vector3(), scattered:false, dead:false, burning:false, survives:false, fade:1.0,
+    rx:Math.random()*3, ry:Math.random()*3, rxs:(Math.random()-0.5)*2, rys:(Math.random()-0.5)*2 });
+  ringMesh.setColorAt(i, _rcInit.setRGB(0.54,0.44,0.31));
+}
+ringMesh.instanceColor.needsUpdate=true;
+scene.add(ringMesh);
+const _toE=new THREE.Vector3();
+const _hotCol=new THREE.Color(), _rockCol=new THREE.Color();
+
+function scatterRing(){
+  const epic=IMPACT_WORLD.clone();
+  for(const rd of ringData){
+    rd.pos.set(rd.radius*Math.cos(rd.angle), rd.height, rd.radius*Math.sin(rd.angle));
+    const radial=rd.pos.clone().sub(epic);
+    const dist=radial.length()+0.001; radial.normalize();
+    const spread=new THREE.Vector3((Math.random()-0.5),(Math.random()-0.5),(Math.random()-0.5)).multiplyScalar(0.35);
+    const dir=radial.clone().add(spread).normalize();
+    const sp=(250+Math.random()*650)*(0.6+0.8*Math.min(1.0,180.0/dist));
+    rd.vel.copy(dir).multiplyScalar(sp);
+    rd.scattered=true; rd.burning=false; rd.fade=1.0;
+    rd.survives=Math.random()<0.5;
+    if(rd.survives) rd.size=Math.max(rd.size, 1.4);
+  }
+}
+
+const D=900;
+const debris=new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1,1),
+  new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.96,metalness:0.04}), D);
+debris.castShadow=true; debris.receiveShadow=true; debris.frustumCulled=false;
+const dVel=[], dRot=[]; const _dc=new THREE.Color();
+for(let i=0;i<D;i++){ dVel.push(new THREE.Vector3()); dRot.push(new THREE.Vector3(Math.random()-0.5,Math.random()-0.5,Math.random()-0.5).normalize());
+  _dc.setRGB(0.04+Math.random()*0.06,0.035+Math.random()*0.05,0.03+Math.random()*0.04); debris.setColorAt(i,_dc); }
+debris.instanceColor.needsUpdate=true; scene.add(debris);
+
+const CHUNK=240;
+const chunkMat2=new THREE.ShaderMaterial({
+  uniforms:{ uTime:{value:0}, uSunDir:{value:sunDir.clone()} },
+  vertexShader:`varying vec3 vL; varying vec3 vN; void main(){ vL=position; vN=normalize(mat3(modelMatrix)*normal);
+    gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+  fragmentShader:`varying vec3 vL; varying vec3 vN; uniform float uTime; uniform vec3 uSunDir; ${noiseChunk}
+    void main(){ float rock=fbm(vL*3.5,6)*0.5+0.5;
+      vec3 col=mix(vec3(0.055,0.050,0.045),vec3(0.110,0.100,0.088),rock);
+      vec2 w=worley(vL*3.0); float vein=smoothstep(0.62,0.72,1.0-smoothstep(0.0,0.12,w.y-w.x));
+      vec3 lava=mix(vec3(0.55,0.11,0.02),vec3(1.0,0.5,0.12),smoothstep(0.6,0.82,snoise(vL*7.0+vec3(uTime*0.18))));
+      col=mix(col,lava,vein); col+=lava*vein*1.4;
+      col*=(0.16+max(dot(normalize(vN),normalize(uSunDir)),0.0)*0.92);
+      gl_FragColor=vec4(col,1.0); }`
+});
+const chunkDebris=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,2), chunkMat2, CHUNK);
+chunkDebris.castShadow=true; chunkDebris.receiveShadow=true; chunkDebris.frustumCulled=false;
+const cVel=[], cRot=[];
+for(let i=0;i<CHUNK;i++){ cVel.push(new THREE.Vector3()); cRot.push(new THREE.Vector3(Math.random()-0.5,Math.random()-0.5,Math.random()-0.5).normalize()); }
+scene.add(chunkDebris);
+
+const SW=2000; const swPos=new Float32Array(SW*3), swLife=new Float32Array(SW), swSpeed=new Float32Array(SW);
+const swG=new THREE.BufferGeometry();
+swG.setAttribute('position',new THREE.BufferAttribute(swPos,3));
+swG.setAttribute('life',new THREE.BufferAttribute(swLife,1));
+swG.setAttribute('speed',new THREE.BufferAttribute(swSpeed,1));
+const shockwave=new THREE.Points(swG, new THREE.ShaderMaterial({
+  vertexShader:`attribute float life; attribute float speed; varying float vL;
+    void main(){ vL=life; vec4 mv=modelViewMatrix*vec4(position,1.0);
+    gl_PointSize=(80.0*speed)*(1.0-life)*(350.0/-mv.z); gl_Position=projectionMatrix*mv; }`,
+  fragmentShader:`varying float vL; void main(){ float d=distance(gl_PointCoord,vec2(0.5));
+    if(d>0.5)discard; gl_FragColor=vec4(mix(vec3(1.0,0.6,0.3),vec3(0.8,0.3,0.1),vL),smoothstep(0.5,0.0,d)*(1.0-vL)*0.7); }`,
+  transparent:true, depthWrite:false, blending:THREE.AdditiveBlending }));
+shockwave.visible=false; scene.add(shockwave);
+
+const P=80000;
+const pPos=new Float32Array(P*3),pVel=new Float32Array(P*3),pCol=new Float32Array(P*3);
+const pLife=new Float32Array(P),pSize=new Float32Array(P),pType=new Float32Array(P),pRate=new Float32Array(P);
+for(let i=0;i<P;i++){ pLife[i]=0; const r=Math.random(); pType[i]=r<0.4?0:(r<0.62?1:(r<0.82?2:3)); }
+const pG=new THREE.BufferGeometry();
+pG.setAttribute('position',new THREE.BufferAttribute(pPos,3));
+pG.setAttribute('customColor',new THREE.BufferAttribute(pCol,3));
+pG.setAttribute('size',new THREE.BufferAttribute(pSize,1));
+pG.setAttribute('life',new THREE.BufferAttribute(pLife,1));
+const trailPts=new THREE.Points(pG, new THREE.ShaderMaterial({
+  vertexShader:`attribute float size; attribute vec3 customColor; attribute float life; varying vec3 vC; varying float vL;
+    void main(){ vC=customColor; vL=life; vec4 mv=modelViewMatrix*vec4(position,1.0);
+    gl_PointSize=size*(320.0/-mv.z)*life; gl_Position=projectionMatrix*mv; }`,
+  fragmentShader:`varying vec3 vC; varying float vL; void main(){ float d=distance(gl_PointCoord,vec2(0.5));
+    if(d>0.5)discard; float a=smoothstep(0.5,0.12,d); gl_FragColor=vec4(vC*(0.6+a*1.2), a*vL*0.9); }`,
+  transparent:true, depthWrite:false, blending:THREE.AdditiveBlending }));
+trailPts.renderOrder=4;
+scene.add(trailPts);
+
+const impactLights=[]; for(let i=0;i<4;i++){ const pl=new THREE.PointLight(0xff8844,0,500,2); scene.add(pl); impactLights.push(pl); }
+const secLights=[];
+for(let i=0;i<3;i++){ const pl=new THREE.PointLight(0xff6622,0,320,2); scene.add(pl); secLights.push({light:pl, life:0}); }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ХВОСТЫ (МИРОВЫЕ): белые вайспы + огненные шлейфы + КАМЕННАЯ КРОШКА за кусками
+   ═══════════════════════════════════════════════════════════════════════════════ */
+const TRAIL_N=40000;
+const trailPos=new Float32Array(TRAIL_N*3), trailVel=new Float32Array(TRAIL_N*3), trailCol=new Float32Array(TRAIL_N*3);
+const trailLife=new Float32Array(TRAIL_N), trailSize=new Float32Array(TRAIL_N);
+let trailCursor=0;
+const trailG=new THREE.BufferGeometry();
+trailG.setAttribute('position',new THREE.BufferAttribute(trailPos,3));
+trailG.setAttribute('customColor',new THREE.BufferAttribute(trailCol,3));
+trailG.setAttribute('size',new THREE.BufferAttribute(trailSize,1));
+trailG.setAttribute('life',new THREE.BufferAttribute(trailLife,1));
+const trailTailPts=new THREE.Points(trailG, new THREE.ShaderMaterial({
+  vertexShader:`attribute float size; attribute vec3 customColor; attribute float life; varying vec3 vC; varying float vL;
+    void main(){ vC=customColor; vL=life; vec4 mv=modelViewMatrix*vec4(position,1.0);
+    gl_PointSize=size*(300.0/-mv.z)*life; gl_Position=projectionMatrix*mv; }`,
+  fragmentShader:`varying vec3 vC; varying float vL; void main(){ float d=distance(gl_PointCoord,vec2(0.5));
+    if(d>0.5)discard; float a=smoothstep(0.5,0.18,d); gl_FragColor=vec4(vC, a*vL*0.6); }`,
+  transparent:true, depthWrite:false, blending:THREE.AdditiveBlending }));
+trailTailPts.renderOrder=4;
+scene.add(trailTailPts);
+function emitWisp(pos, vel, count){
+  for(let n=0;n<count;n++){
+    const i=trailCursor; trailCursor=(trailCursor+1)%TRAIL_N;
+    trailPos[i*3]=pos.x+(Math.random()-0.5)*2.0;
+    trailPos[i*3+1]=pos.y+(Math.random()-0.5)*2.0;
+    trailPos[i*3+2]=pos.z+(Math.random()-0.5)*2.0;
+    trailVel[i*3]=-vel.x*0.02+(Math.random()-0.5)*6;
+    trailVel[i*3+1]=-vel.y*0.02+(Math.random()-0.5)*6;
+    trailVel[i*3+2]=-vel.z*0.02+(Math.random()-0.5)*6;
+    const b=0.30+Math.random()*0.15;
+    trailCol[i*3]=0.85*b; trailCol[i*3+1]=0.9*b; trailCol[i*3+2]=1.0*b;
+    trailSize[i]=0.5+Math.random()*0.9;
+    trailLife[i]=0.35+Math.random()*0.3;
+  }
+}
+function emitFireWisp(pos, vel, count, sizeMul){
+  for(let n=0;n<count;n++){
+    const i=trailCursor; trailCursor=(trailCursor+1)%TRAIL_N;
+    trailPos[i*3]=pos.x+(Math.random()-0.5)*3.0;
+    trailPos[i*3+1]=pos.y+(Math.random()-0.5)*3.0;
+    trailPos[i*3+2]=pos.z+(Math.random()-0.5)*3.0;
+    trailVel[i*3]=-vel.x*0.03+(Math.random()-0.5)*12;
+    trailVel[i*3+1]=-vel.y*0.03+(Math.random()-0.5)*12;
+    trailVel[i*3+2]=-vel.z*0.03+(Math.random()-0.5)*12;
+    const b=0.85+Math.random()*0.15;
+    trailCol[i*3]=1.0*b; trailCol[i*3+1]=0.55*b; trailCol[i*3+2]=0.18*b;
+    trailSize[i]=(1.4+Math.random()*2.4)*sizeMul;
+    trailLife[i]=0.4+Math.random()*0.4;
+  }
+}
+function emitDebrisWisp(pos, vel, count){
+  for(let n=0;n<count;n++){
+    const i=trailCursor; trailCursor=(trailCursor+1)%TRAIL_N;
+    trailPos[i*3]=pos.x+(Math.random()-0.5)*4.0;
+    trailPos[i*3+1]=pos.y+(Math.random()-0.5)*4.0;
+    trailPos[i*3+2]=pos.z+(Math.random()-0.5)*4.0;
+    trailVel[i*3]=-vel.x*0.06+(Math.random()-0.5)*8;
+    trailVel[i*3+1]=-vel.y*0.06+(Math.random()-0.5)*8;
+    trailVel[i*3+2]=-vel.z*0.06+(Math.random()-0.5)*8;
+    const b=0.5+Math.random()*0.4;
+    trailCol[i*3]=0.34*b; trailCol[i*3+1]=0.30*b; trailCol[i*3+2]=0.25*b;
+    trailSize[i]=0.6+Math.random()*1.2;
+    trailLife[i]=0.3+Math.random()*0.3;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ПУЛЫ УДАРА — дети earthPlanet (локаль). crater НАД поверхностью. crust = черепки коры
+   ═══════════════════════════════════════════════════════════════════════════════ */
+function makeBlastPool(n, additive, parent){
+  const pos=new Float32Array(n*3), vel=new Float32Array(n*3), col=new Float32Array(n*3);
+  const life=new Float32Array(n), size=new Float32Array(n), rate=new Float32Array(n);
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  g.setAttribute('customColor',new THREE.BufferAttribute(col,3));
+  g.setAttribute('size',new THREE.BufferAttribute(size,1));
+  g.setAttribute('life',new THREE.BufferAttribute(life,1));
+  const mat=new THREE.ShaderMaterial({
+    vertexShader:`attribute float size; attribute vec3 customColor; attribute float life; varying vec3 vC; varying float vL;
+      void main(){ vC=customColor; vL=life; vec4 mv=modelViewMatrix*vec4(position,1.0);
+      gl_PointSize=size*(300.0/-mv.z)*sqrt(max(life,0.0)); gl_Position=projectionMatrix*mv; }`,
+    fragmentShader:`varying vec3 vC; varying float vL;
+      void main(){ float d=distance(gl_PointCoord,vec2(0.5)); if(d>0.5)discard;
+        float a=smoothstep(0.5,0.16,d);
+        gl_FragColor=vec4(vC, a*clamp(vL,0.0,1.0)*0.92); }`,
+    transparent:true, depthWrite:false, depthTest:true,
+    blending: additive?THREE.AdditiveBlending:THREE.NormalBlending
+  });
+  const pts=new THREE.Points(g,mat);
+  pts.renderOrder=additive?3:2;
+  pts.frustumCulled=false;
+  parent.add(pts);
+  return {pos,vel,col,life,size,rate,g,pts,cursor:0,n};
+}
+function makeCraterPool(n, parent){
+  const pos=new Float32Array(n*3), col=new Float32Array(n*3), size=new Float32Array(n), glow=new Float32Array(n);
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  g.setAttribute('customColor',new THREE.BufferAttribute(col,3));
+  g.setAttribute('size',new THREE.BufferAttribute(size,1));
+  g.setAttribute('aGlow',new THREE.BufferAttribute(glow,1));
+  const mat=new THREE.ShaderMaterial({
+    uniforms:{ uTime:{value:0} },
+    vertexShader:`uniform float uTime; attribute float size; attribute vec3 customColor; attribute float aGlow;
+      varying vec3 vC; varying float vG;
+      void main(){ vC=customColor; vG=aGlow; vec4 mv=modelViewMatrix*vec4(position,1.0);
+      float tw = aGlow>0.5 ? (0.55+0.45*sin(uTime*7.0+position.x*3.0+position.y*5.0)) : 1.0;
+      gl_PointSize=size*(300.0/-mv.z)*tw; gl_Position=projectionMatrix*mv; }`,
+    fragmentShader:`varying vec3 vC; varying float vG;
+      void main(){ float d=distance(gl_PointCoord,vec2(0.5)); if(d>0.5)discard;
+        float a=smoothstep(0.5,0.10,d);
+        vec3 c = vG>0.5 ? vC*(1.4+0.6*sin(vC.r*40.0)) : vC;
+        gl_FragColor=vec4(c, a*0.96); }`,
+    transparent:true, depthWrite:false, depthTest:true, blending:THREE.NormalBlending
+  });
+  const pts=new THREE.Points(g,mat);
+  pts.renderOrder=1;
+  pts.frustumCulled=false;
+  parent.add(pts);
+  return {pos,col,size,glow,g,pts,mat,cursor:0,n};
+}
+const firePool   = makeBlastPool(26000, true,  earthPlanet);
+const smokePool  = makeBlastPool(26000, false, earthPlanet);
+const crustPool  = makeBlastPool(18000, false, earthPlanet);
+const craterPool = makeCraterPool(70000, earthPlanet);
+const EARTH_COLS=[[0.03,0.09,0.03],[0.08,0.11,0.03],[0.20,0.16,0.08],[0.12,0.10,0.08],[0.02,0.08,0.18],[0.10,0.11,0.09]];
+
+function updateBlastPool(pool, dt){
+  let alive=0;
+  for(let i=0;i<pool.n;i++){
+    if(pool.life[i]<=0){ pool.size[i]=0; continue; }
+    alive++;
+    const i3=i*3;
+    pool.pos[i3]+=pool.vel[i3]*dt; pool.pos[i3+1]+=pool.vel[i3+1]*dt; pool.pos[i3+2]+=pool.vel[i3+2]*dt;
+    pool.vel[i3]*=0.93; pool.vel[i3+1]*=0.93; pool.vel[i3+2]*=0.93;
+    pool.life[i]-=dt*pool.rate[i];
+    if(pool.life[i]<=0) pool.size[i]=0;
+  }
+  pool.g.attributes.position.needsUpdate=true;
+  pool.g.attributes.customColor.needsUpdate=true;
+  pool.g.attributes.life.needsUpdate=true;
+  pool.g.attributes.size.needsUpdate=true;
+  return alive;
+}
+function emitCrater(pool, lx,ly,lz, r,g,b, sz, glowFlag){
+  const i=pool.cursor; pool.cursor=(pool.cursor+1)%pool.n;
+  const i3=i*3;
+  pool.pos[i3]=lx; pool.pos[i3+1]=ly; pool.pos[i3+2]=lz;
+  pool.col[i3]=r; pool.col[i3+1]=g; pool.col[i3+2]=b;
+  pool.size[i]=sz; pool.glow[i]=glowFlag;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   СИСТЕМА УДАРОВ — вспышка В ШЕЙДЕРЕ -> кольцо(vel0) -> mushroom(потолок) + crater
+   + scorch заморожен с minScorch + черепки коры(big) + pscale + airFlag
+   ═══════════════════════════════════════════════════════════════════════════════ */
+const IMP_N=16;
+const _t1L=new THREE.Vector3(), _t2L=new THREE.Vector3(), _refL=new THREE.Vector3();
+const _epicW=new THREE.Vector3();
+const _up=new THREE.Vector3(0,1,0);
+
+const impacts=[];
+function buildImpacts(){
+  for(let i=0;i<IMP_N;i++){
+    const light=new THREE.PointLight(0xffaa55,0,3000,2); scene.add(light);
+    impacts.push({active:false, t:0, mag:0, pscale:1, sz:0, Rmax:0, frontW:0, minScorch:0,
+      tFlashEnd:0, tShockEnd:0, tSmokeEnd:0, big:false,
+      normalLocal:new THREE.Vector3(), light,
+      lastFrontAng:-1, idx:i});
+  }
+}
+buildImpacts();
+
+function lerpK(a,b,k){ return a+(b-a)*k; }
+function easeOut(t){ return 1-Math.pow(1-t,3); }
+function buildTangents(nL){
+  _refL.set(Math.abs(nL.y)<0.9?0:1, Math.abs(nL.y)<0.9?1:0, 0);
+  _t1L.crossVectors(nL,_refL).normalize();
+  _t2L.crossVectors(nL,_t1L).normalize();
+}
+
+function spawnImpact(worldPos, blastSize, ejectaCount, bigFlag, airFlag){
+  airFlag=!!airFlag;
+  const W = worldPos.clone().sub(PLANET_POS).normalize();
+  const local = W.clone().applyAxisAngle(_up, -planetRot);
+  console.log('[impact] world=', W.toArray().map(v=>+v.toFixed(3)),
+              ' local=', local.toArray().map(v=>+v.toFixed(3)),
+              ' blastSize=', blastSize.toFixed(1), ' big=', !!bigFlag, ' air=', airFlag, ' planetRot=', planetRot.toFixed(3));
+
+  const im=impacts.find(x=>!x.active); if(!im) return;
+  im.active=true; im.t=0; im.big=!!bigFlag;
+  im.mag=THREE.MathUtils.clamp(blastSize/340, 0.12, 1.0);
+  im.pscale=THREE.MathUtils.clamp(im.mag*1.6+0.12, 0.12, 1.0);
+  im.sz=blastSize/PLANET_R*1.25;
+  im.Rmax=im.sz*1.5;
+  im.frontW=THREE.MathUtils.clamp(im.sz*0.16, 0.006, im.sz*0.5);
+  im.tFlashEnd=lerpK(0.30,0.70,im.mag);
+  im.tShockEnd=lerpK(2.5,7.0,im.mag);
+  im.tSmokeEnd=im.tShockEnd+lerpK(2.0,5.0,im.mag);
+  if(airFlag){ im.tFlashEnd*=0.45; im.tShockEnd*=0.45; im.tSmokeEnd=im.tShockEnd+lerpK(0.8,1.6,im.mag); }
+  // минимальный читаемый ожог для наземных ударов (растёт вместе с фронтом)
+  im.minScorch = airFlag ? 0.0 : lerpK(0.12,0.45,im.mag);
+  im.normalLocal.copy(local);
+  im.lastFrontAng=-0.001;
+
+  uScorchOn[im.idx]=1; uScorchFront[im.idx]=0.001; uScorchDir[im.idx].copy(local);
+  cloudT[im.idx]=0; cloudMag[im.idx]= airFlag ? im.mag*0.4 : im.mag; uCloudClear[im.idx]= airFlag?0.5:1;
+
+  _epicW.copy(local).applyAxisAngle(_up, +planetRot);
+  const wp=PLANET_POS.clone().addScaledVector(_epicW, PLANET_R).project(camera);
+  shockPass.uniforms.uPunchCenter.value.set((wp.x+1)/2, (wp.y+1)/2);
+  shockPass.uniforms.uPunchStr.value=0.0;
+
+  buildTangents(im.normalLocal);
+  const ps=im.pscale;
+  for(let n=0;n<ejectaCount;n++){
+    const a=Math.random()*6.2832;
+    const ca=Math.cos(a), sa=Math.sin(a);
+    const sp=blastSize*(0.4+Math.random()*1.2);
+    const vx=im.normalLocal.x*sp*0.6+_t1L.x*ca*sp*0.5+_t2L.x*sa*sp*0.5;
+    const vy=im.normalLocal.y*sp*0.6+_t1L.y*ca*sp*0.5+_t2L.y*sa*sp*0.5;
+    const vz=im.normalLocal.z*sp*0.6+_t1L.z*ca*sp*0.5+_t2L.z*sa*sp*0.5;
+    const bx=im.normalLocal.x*PLANET_R, by=im.normalLocal.y*PLANET_R, bz=im.normalLocal.z*PLANET_R;
+    const i=smokePool.cursor; smokePool.cursor=(smokePool.cursor+1)%smokePool.n; const i3=i*3;
+    smokePool.pos[i3]=bx; smokePool.pos[i3+1]=by; smokePool.pos[i3+2]=bz;
+    smokePool.vel[i3]=vx; smokePool.vel[i3+1]=vy; smokePool.vel[i3+2]=vz;
+    const b=0.5+Math.random()*0.4;
+    smokePool.col[i3]=0.5*b; smokePool.col[i3+1]=0.32*b; smokePool.col[i3+2]=0.2*b;
+    smokePool.size[i]=PLANET_R*(0.004+Math.random()*0.01)*ps;
+    smokePool.life[i]=1.0; smokePool.rate[i]=0.9+Math.random()*0.6;
+  }
+}
+
+function deactivateImpact(im){
+  im.active=false; im.light.intensity=0;
+  uShockInt[im.idx]=0; uShockDust[im.idx]=0; uShockFront[im.idx]=0;
+}
+
+function updateImpacts(dt){
+  for(let i=0;i<IMP_N;i++){
+    const im=impacts[i];
+    if(!im.active){ uShockInt[i]=0; uShockDust[i]=0; continue; }
+    im.t+=dt;
+    const t=im.t, k=im.mag, nL=im.normalLocal;
+    if(t>im.tSmokeEnd){ deactivateImpact(im); continue; }
+    buildTangents(nL);
+    const det = im.big ? 3.0 : 1.0;
+    const ps  = im.pscale;
+
+    const frontProg=easeOut(Math.min(t/im.tShockEnd,1.0));
+    const frontAng=im.Rmax*frontProg;
+    const flashProg=Math.min(t/im.tFlashEnd,1.0);
+    const fwEff=im.frontW*(1.0-0.7*frontProg);
+
+    uShockDirL[i].copy(nL);
+    uShockFront[i]=frontAng;
+    uShockWidth[i]=fwEff;
+    uShockInt[i]=(t<im.tFlashEnd?1.0:Math.exp(-(t-im.tFlashEnd)/lerpK(1.5,4.0,k)));
+    uShockDust[i]=(t<im.tShockEnd? (0.5+0.5*(1-frontProg)) : Math.exp(-(t-im.tShockEnd)/1.5));
+    // scorch: минимум тоже растёт с фронтом => к концу = max(Rmax, minScorch)
+    const scTarget=Math.max(frontAng, im.minScorch*frontProg);
+    if(scTarget>uScorchFront[i]) uScorchFront[i]=scTarget;
+
+    const bx=nL.x*PLANET_R, by=nL.y*PLANET_R, bz=nL.z*PLANET_R;
+
+    // ---- тонкое кольцо фронта (vel=0 => не ползёт радиально) ----
+    if(t<im.tShockEnd){
+      const nr=(lerpK(20,70,k)*det*dt*60)|0;
+      const ringBright=uShockInt[i]*0.7;
+      for(let j=0;j<nr;j++){
+        const a=Math.random()*6.2832; const ca=Math.cos(a), sa=Math.sin(a);
+        const jitter=(Math.random()-0.5)*fwEff*0.8;
+        const ang=frontAng+jitter;
+        const dx=nL.x*Math.cos(ang)+_t1L.x*Math.sin(ang)*ca+_t2L.x*Math.sin(ang)*sa;
+        const dy=nL.y*Math.cos(ang)+_t1L.y*Math.sin(ang)*ca+_t2L.y*Math.sin(ang)*sa;
+        const dz=nL.z*Math.cos(ang)+_t1L.z*Math.sin(ang)*ca+_t2L.z*Math.sin(ang)*sa;
+        const ii=firePool.cursor; firePool.cursor=(firePool.cursor+1)%firePool.n; const i3=ii*3;
+        firePool.pos[i3]=dx*PLANET_R; firePool.pos[i3+1]=dy*PLANET_R; firePool.pos[i3+2]=dz*PLANET_R;
+        firePool.vel[i3]=0; firePool.vel[i3+1]=0; firePool.vel[i3+2]=0;
+        const bb=ringBright*(0.6+Math.random()*0.4);
+        firePool.col[i3]=1.0*bb; firePool.col[i3+1]=0.6*bb; firePool.col[i3+2]=0.25*bb;
+        firePool.size[ii]=PLANET_R*(0.004+Math.random()*0.006)*ps;
+        firePool.life[ii]=1.0; firePool.rate[ii]=2.5;
+      }
+    }
+
+    // ---- PAINT КРАТЕРА: гарь на поверхности (lift мал) + валик + угольки ----
+    if(frontAng>im.lastFrontAng){
+      const density=lerpK(22,70,k)*det;
+      const count=Math.max(2, Math.ceil((frontAng-im.lastFrontAng)*PLANET_R*density));
+      for(let j=0;j<count;j++){
+        const a=Math.random()*6.2832; const ca=Math.cos(a), sa=Math.sin(a);
+        const ang=im.lastFrontAng+Math.random()*(frontAng-im.lastFrontAng);
+        const dx=nL.x*Math.cos(ang)+_t1L.x*Math.sin(ang)*ca+_t2L.x*Math.sin(ang)*sa;
+        const dy=nL.y*Math.cos(ang)+_t1L.y*Math.sin(ang)*ca+_t2L.y*Math.sin(ang)*sa;
+        const dz=nL.z*Math.cos(ang)+_t1L.z*Math.sin(ang)*ca+_t2L.z*Math.sin(ang)*sa;
+        const lift=1.0+Math.random()*3.0;
+        const roll=Math.random();
+        let cr,cg,cb;
+        if(roll<0.14){ cr=1.0; cg=0.4+Math.random()*0.3; cb=0.1; }
+        else if(roll<0.34 && ang>frontAng*0.8){ cr=0.13; cg=0.11; cb=0.09; }
+        else { const sh=0.02+Math.random()*0.05; cr=sh*1.1; cg=sh; cb=sh*0.9; }
+        emitCrater(craterPool, dx*(PLANET_R+lift), dy*(PLANET_R+lift), dz*(PLANET_R+lift), cr,cg,cb,
+          PLANET_R*(0.03+Math.random()*0.06)*ps, roll<0.14?1:0);
+      }
+      im.lastFrontAng=frontAng;
+    }
+
+    // ---- ЧЕРЕПКИ КОРЫ (только big): по ходу волны, цвет земли + тлеющая кромка ----
+    if(im.big && t<im.tShockEnd){
+      const nsh=(lerpK(8,30,k)*dt*60)|0;
+      const spd=im.Rmax*PLANET_R*0.5;
+      for(let j=0;j<nsh;j++){
+        const a=Math.random()*6.2832; const ca=Math.cos(a), sa=Math.sin(a);
+        const ang=frontAng*(0.85+Math.random()*0.3);
+        const sdx=_t1L.x*ca+_t2L.x*sa, sdy=_t1L.y*ca+_t2L.y*sa, sdz=_t1L.z*ca+_t2L.z*sa;
+        const ddx=nL.x*Math.cos(ang)+sdx*Math.sin(ang);
+        const ddy=nL.y*Math.cos(ang)+sdy*Math.sin(ang);
+        const ddz=nL.z*Math.cos(ang)+sdz*Math.sin(ang);
+        const px=ddx*PLANET_R, py=ddy*PLANET_R, pz=ddz*PLANET_R;
+        const vx=sdx*spd+nL.x*spd*0.25, vy=sdy*spd+nL.y*spd*0.25, vz=sdz*spd+nL.z*spd*0.25;
+        const ec=EARTH_COLS[(Math.random()*EARTH_COLS.length)|0];
+        const ii=crustPool.cursor; crustPool.cursor=(crustPool.cursor+1)%crustPool.n; const i3=ii*3;
+        crustPool.pos[i3]=px; crustPool.pos[i3+1]=py; crustPool.pos[i3+2]=pz;
+        crustPool.vel[i3]=vx; crustPool.vel[i3+1]=vy; crustPool.vel[i3+2]=vz;
+        crustPool.col[i3]=ec[0]; crustPool.col[i3+1]=ec[1]; crustPool.col[i3+2]=ec[2];
+        crustPool.size[ii]=PLANET_R*(0.010+Math.random()*0.022);
+        crustPool.life[ii]=1.0; crustPool.rate[ii]=0.5+(1.0-frontProg)*1.2;
+        if(Math.random()<0.5){
+          const fi=firePool.cursor; firePool.cursor=(firePool.cursor+1)%firePool.n; const f3=fi*3;
+          firePool.pos[f3]=px; firePool.pos[f3+1]=py; firePool.pos[f3+2]=pz;
+          firePool.vel[f3]=0; firePool.vel[f3+1]=0; firePool.vel[f3+2]=0;
+          const eb=0.30+Math.random()*0.15;
+          firePool.col[f3]=1.0*eb; firePool.col[f3+1]=0.4*eb; firePool.col[f3+2]=0.12*eb;
+          firePool.size[fi]=PLANET_R*(0.006+Math.random()*0.010);
+          firePool.life[fi]=1.0; firePool.rate[fi]=1.2+(1.0-frontProg)*1.0;
+        }
+      }
+    }
+
+    // ---- ДЫМ-ГРИБ после вспышки (ПОТОЛОК размера => атмосфера видна) ----
+    if(t>im.tFlashEnd){
+      const sp=(t-im.tFlashEnd);
+      const grow=THREE.MathUtils.clamp(sp/lerpK(2.0,4.0,k),0,1);
+      const fadeOut=Math.exp(-sp/lerpK(2.5,5.0,k));
+      const rate=lerpK(20,60,k)*fadeOut*det;
+      const nm=Math.max(0,(rate*dt*60)|0);
+      const stemH=Math.min(im.Rmax*PLANET_R*0.9*grow, PLANET_R*0.32);
+      const capR =Math.min(im.Rmax*PLANET_R*1.1*grow, PLANET_R*0.42);
+      for(let j=0;j<nm;j++){
+        const isCap=Math.random()<0.6;
+        let px,py,pz,vx,vy,vz;
+        if(isCap){
+          const a=Math.random()*6.2832; const rr=capR*Math.sqrt(Math.random());
+          const cx=_t1L.x*rr*Math.cos(a)+_t2L.x*rr*Math.sin(a);
+          const cy=_t1L.y*rr*Math.cos(a)+_t2L.y*rr*Math.sin(a);
+          const cz=_t1L.z*rr*Math.cos(a)+_t2L.z*rr*Math.sin(a);
+          px=bx+nL.x*stemH+cx; py=by+nL.y*stemH+cy; pz=bz+nL.z*stemH+cz;
+          const tx=-_t1L.x*Math.sin(a)+_t2L.x*Math.cos(a);
+          const ty=-_t1L.y*Math.sin(a)+_t2L.y*Math.cos(a);
+          const tz=-_t1L.z*Math.sin(a)+_t2L.z*Math.cos(a);
+          vx=tx*capR*0.3+nL.x*4; vy=ty*capR*0.3+nL.y*4; vz=tz*capR*0.3+nL.z*4;
+        } else {
+          const hh=stemH*Math.random();
+          px=bx+nL.x*hh+(Math.random()-0.5)*im.Rmax*PLANET_R*0.12;
+          py=by+nL.y*hh+(Math.random()-0.5)*im.Rmax*PLANET_R*0.12;
+          pz=bz+nL.z*hh+(Math.random()-0.5)*im.Rmax*PLANET_R*0.12;
+          vx=nL.x*stemH*0.4; vy=nL.y*stemH*0.4; vz=nL.z*stemH*0.4;
+        }
+        const ii=smokePool.cursor; smokePool.cursor=(smokePool.cursor+1)%smokePool.n; const i3=ii*3;
+        smokePool.pos[i3]=px; smokePool.pos[i3+1]=py; smokePool.pos[i3+2]=pz;
+        smokePool.vel[i3]=vx; smokePool.vel[i3+1]=vy; smokePool.vel[i3+2]=vz;
+        const sh=0.10+Math.random()*0.10;
+        smokePool.col[i3]=sh*1.2; smokePool.col[i3+1]=sh*1.1; smokePool.col[i3+2]=sh;
+        smokePool.size[ii]=PLANET_R*(0.003+Math.random()*0.006)*ps;
+        smokePool.life[ii]=1.0; smokePool.rate[ii]=lerpK(0.5,0.25,k);
+      }
+    }
+
+    _epicW.copy(nL).applyAxisAngle(_up, +planetRot);
+    im.light.position.copy(PLANET_POS).addScaledVector(_epicW, PLANET_R*1.02);
+    im.light.intensity=lerpK(15,90,k)*(t<im.tFlashEnd?1.0:Math.exp(-(t-im.tFlashEnd)/lerpK(1.0,3.0,k)))*(im.big?1.0:0.6);
+  }
+}
+
+// scale НЕ трогаем (=1): кусок = дыра; big медленный/последний; скорости разведены
+function launchCrustCluster(){
+  for(let k=0;k<antipodePatches.length;k++){
+    const pd=antipodePatches[k];
+    if(pd.detached) continue;
+    const c=pd.centerDir.clone().multiplyScalar((R+RIN_BASE)/2);
+    pd.c0=c.clone();
+    pd.mesh.geometry.translate(-c.x,-c.y,-c.z);
+    pd.mesh.position.copy(c);
+    pd.mesh.scale.setScalar(1);   // физически = оторванный кусок, размер не меняется
+    const toE=PLANET_POS.clone().sub(pd.mesh.position).normalize();
+    if(k===0){
+      pd.vel.copy(toE.multiplyScalar(170+Math.random()*40));   // медленно => последний
+      pd.blastSize=320+Math.random()*140;                      // калибр взрыва, не геометрия
+      pd.isBig=true;
+    } else {
+      const lat=new THREE.Vector3((Math.random()-0.5),(Math.random()-0.5),(Math.random()-0.5)).multiplyScalar(0.12);
+      pd.vel.copy(toE.clone().add(lat).normalize().multiplyScalar(350+Math.random()*950)); // разброс => прилёт растянут
+      pd.blastSize=30+Math.random()*70; pd.isBig=false;
+    }
+    pd.angVel.set((Math.random()-0.5)*0.5,(Math.random()-0.5)*0.5,(Math.random()-0.5)*0.5);
+    pd.detached=true; pd.tethered=false; pd.activated=true; pd.toEarth=true; pd.rested=false;
+  }
+}
+
+function spawnSecondary(count, center){
+  const outN=center.clone().normalize();
+  let spawned=0;
+  for(let i=0;i<P && spawned<count;i++){
+    if(pLife[i]>0) continue;
+    pPos[i*3]=center.x+(Math.random()-0.5)*6;
+    pPos[i*3+1]=center.y+(Math.random()-0.5)*6;
+    pPos[i*3+2]=center.z+(Math.random()-0.5)*6;
+    const dir=outN.clone().add(new THREE.Vector3((Math.random()-0.5)*1.2,(Math.random()-0.5)*1.2,(Math.random()-0.5)*1.2)).normalize();
+    const sp=15+Math.random()*45;
+    pVel[i*3]=dir.x*sp; pVel[i*3+1]=dir.y*sp; pVel[i*3+2]=dir.z*sp;
+    if(Math.random()<0.5){ pCol[i*3]=0.9;pCol[i*3+1]=0.3;pCol[i*3+2]=0.05; pSize[i]=1+Math.random()*2.5; }
+    else { pCol[i*3]=0.4;pCol[i*3+1]=0.35;pCol[i*3+2]=0.3; pSize[i]=2+Math.random()*4; }
+    pRate[i]=0.2+Math.random()*0.2;
+    pLife[i]=1.0;
+    spawned++;
+  }
+  if(spawned>0){ pG.attributes.position.needsUpdate=pG.attributes.customColor.needsUpdate=pG.attributes.life.needsUpdate=pG.attributes.size.needsUpdate=true; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ЛЕВИАФАН
+   ═══════════════════════════════════════════════════════════════════════════════ */
+const leviMat = new THREE.ShaderMaterial({
+  uniforms:{ uTime:{value:0}, uSunDir:{value:sunDir.clone()} },
+  vertexShader:`
+    varying vec3 vPos; varying vec3 vNormalW; varying vec3 vViewDir; varying vec3 vWorld;
+    uniform float uTime;
+    ${noiseChunk}
+    void main(){
+      vPos=position;
+      float d=snoise(position*1.3+uTime*0.03)*0.25+snoise(position*4.0)*0.08;
+      vec3 pos=position+normal*d;
+      vec4 wp=modelMatrix*vec4(pos,1.0);
+      vec4 cwp=modelMatrix*vec4(0.0,0.0,0.0,1.0);
+      float tail=smoothstep(45.0,-115.0,cwp.x);
+      wp.y += sin(cwp.x*0.045 + uTime*0.55)*7.0*tail;
+      wp.z += cos(cwp.x*0.038 + uTime*0.42)*5.5*tail;
+      wp.y += sin(cwp.x*0.11 + uTime*0.9)*1.6*tail;
+      vWorld=wp.xyz;
+      vNormalW=normalize(mat3(modelMatrix)*normal);
+      vViewDir=normalize(cameraPosition-wp.xyz);
+      gl_Position=projectionMatrix*viewMatrix*wp;
+    }`,
+  fragmentShader:`
+    varying vec3 vPos; varying vec3 vNormalW; varying vec3 vViewDir; varying vec3 vWorld;
+    uniform vec3 uSunDir;
+    ${noiseChunk}
+    void main(){
+      vec3 N=normalize(vNormalW); vec3 L=normalize(uSunDir); vec3 V=normalize(vViewDir);
+      float diff=max(dot(N,L),0.0);
+      vec3 base=vec3(0.10,0.040,0.045); vec3 plate=vec3(0.19,0.085,0.070);
+      vec3 teal=vec3(0.07,0.34,0.30); vec3 bone=vec3(0.46,0.41,0.30);
+      float n=fbm(vWorld*1.1,4)*0.5+0.5;
+      float stripes=sin(vWorld.x*0.55 + n*3.0)*0.5+0.5;
+      vec3 col=mix(base,plate,stripes*0.55);
+      col=mix(col,base*0.45,smoothstep(0.55,0.72,fbm(vWorld*2.4+vec3(11.0),4))*0.6);
+      col=mix(col,teal,smoothstep(0.60,0.70,fbm(vWorld*4.0+vec3(5.0),5))*0.55);
+      col=mix(col,bone*0.55,smoothstep(0.15,-0.55,N.y)*0.45);
+      col=mix(col,bone,smoothstep(0.55,0.85,N.y)*smoothstep(0.5,0.7,fbm(vWorld*6.0,3))*0.5);
+      col*=0.62+n*0.38; col*=(0.12+diff*0.95);
+      col+=teal*pow(1.0-max(dot(N,V),0.0),3.0)*0.45;
+      vec3 H=normalize(L+V); col+=vec3(0.55,0.45,0.4)*pow(max(dot(N,H),0.0),40.0)*0.18;
+      gl_FragColor=vec4(col,1.0);
+    }`
+});
+
+const NOSE_X = 90;
+const animPivots = [];
+
+function buildLeviathan(){
+  const g = new THREE.Group();
+  const leviMeshes = [];
+  const add = (geo, x,y,z, sx,sy,sz, rx,ry,rz, shadow=true) => {
+    const m = new THREE.Mesh(geo, leviMat);
+    m.position.set(x,y,z); m.scale.set(sx,sy,sz);
+    if(rx)m.rotation.x=rx; if(ry)m.rotation.y=ry; if(rz)m.rotation.z=rz;
+    m.castShadow = shadow; m.receiveShadow = false;
+    g.add(m); leviMeshes.push(m); return m;
+  };
+  const bodyPts = [];
+  for(let i=0;i<=24;i++){
+    const t=i/24;
+    bodyPts.push(new THREE.Vector3(60-t*180, Math.sin(t*5.0)*7.0*(0.3+t*0.7), Math.cos(t*4.0)*5.0*(0.3+t*0.7)));
+  }
+  for(let i=0;i<bodyPts.length;i++){
+    const t=i/(bodyPts.length-1);
+    const rad = THREE.MathUtils.lerp(20, 2.2, Math.pow(t,0.85));
+    const seg = new THREE.Mesh(new THREE.SphereGeometry(1,10,8), leviMat);
+    seg.position.copy(bodyPts[i]); seg.scale.set(rad*1.25, rad, rad);
+    seg.castShadow=true; g.add(seg); leviMeshes.push(seg);
+  }
+  add(new THREE.SphereGeometry(1,10,8), 58,2,0, 22,17,17);
+  add(new THREE.SphereGeometry(1,10,8), 66,4,0, 14,11,13);
+  const noseCone = new THREE.Mesh(new THREE.ConeGeometry(1,1,10), leviMat);
+  noseCone.position.set(82,2,0); noseCone.scale.set(11,26,11);
+  noseCone.rotation.z = -Math.PI/2; noseCone.castShadow=true; g.add(noseCone); leviMeshes.push(noseCone);
+  for(let i=0;i<10;i++){
+    const t=i/9;
+    const bp = bodyPts[Math.min(bodyPts.length-1, Math.floor(t*10))];
+    const spike = new THREE.Mesh(new THREE.ConeGeometry(1,1,5), leviMat);
+    spike.position.set(bp.x, bp.y+THREE.MathUtils.lerp(20,5,t), bp.z);
+    spike.scale.set(2.2, THREE.MathUtils.lerp(14,5,t), 2.2);
+    spike.castShadow=true; g.add(spike); leviMeshes.push(spike);
+  }
+  function buildTentacle(origin, baseDir, segs, len0, rad0, phaseSeed){
+    const pivot0 = new THREE.Object3D();
+    pivot0.position.copy(origin);
+    pivot0.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), baseDir.clone().normalize());
+    g.add(pivot0);
+    let cur = pivot0;
+    for(let j=0;j<segs;j++){
+      const f=j/segs;
+      const len = len0*(1.0-f*0.62);
+      const rad = rad0*(1.0-f*0.85);
+      const seg = new THREE.Mesh(new THREE.CylinderGeometry(rad*0.62, rad, len, 8), leviMat);
+      seg.position.y = len*0.5; seg.castShadow=true;
+      const pivot = new THREE.Object3D(); pivot.position.y = len;
+      cur.add(seg); cur.add(pivot);
+      animPivots.push({ pivot, phaseA: phaseSeed+j*0.5, phaseB: phaseSeed*1.7+j*0.6, idx:j, n:segs, amp:0.09+f*0.26 });
+      cur = pivot;
+    }
+  }
+  const TENT = 14;
+  for(let i=0;i<TENT;i++){
+    const a = (i/TENT)*Math.PI*2;
+    const back = -0.55 - Math.random()*0.25;
+    const sideY = Math.cos(a)*0.7, sideZ = Math.sin(a)*0.7;
+    const baseDir = new THREE.Vector3(back, sideY, sideZ).normalize();
+    const origin = new THREE.Vector3(40 + Math.random()*14, 4+sideY*8, sideZ*8);
+    buildTentacle(origin, baseDir, 13, 9.5, 3.0, i*1.3);
+  }
+  for(let i=0;i<6;i++){
+    const a=(i/6)*Math.PI*2;
+    const baseDir=new THREE.Vector3(0.2, -0.8, 0).add(new THREE.Vector3(0,0,Math.sin(a)*0.5)).normalize();
+    buildTentacle(new THREE.Vector3(54, -10, Math.cos(a)*7), baseDir, 8, 6.0, 2.2, 20+i*1.1);
+  }
+  const nose = new THREE.Object3D(); nose.position.set(NOSE_X,0,0); g.add(nose);
+  return { group:g, nose, meshes:leviMeshes };
+}
+
+const levi = buildLeviathan();
+scene.add(levi.group);
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   КАМЕРА: WASD + орбита
+   ═══════════════════════════════════════════════════════════════════════════════ */
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.06;
+controls.minDistance = 5; controls.maxDistance = 14000;
+controls.enablePan = true; controls.screenSpacePanning = true;
+controls.enabled = true;
+let camAuto = true;
+controls.addEventListener('start', ()=>{ camAuto=false; });
+const _focusV=new THREE.Vector3();
+const _wobE=new THREE.Euler(), _wobQ=new THREE.Quaternion();
+
+const keys={};
+window.addEventListener('keydown', e=>{
+  keys[e.code]=true;
+  if(e.code==='Space') e.preventDefault();
+  if(e.code==='KeyV'){ debugOn=!debugOn; earthMat.uniforms.uDebug.value=debugOn?1:0; cloudMat.uniforms.uDebug.value=debugOn?1:0; }
+});
+window.addEventListener('keyup', e=>{ keys[e.code]=false; });
+const _mvF=new THREE.Vector3(), _mvR=new THREE.Vector3(), _mv=new THREE.Vector3();
+
+let phase='approach', leviState='idle', impactStart=0, spin=0, leviVelX=0, leviDist=APPROACH_DIST, frame=0;
+const leviVel=new THREE.Vector3();
+const DIVE_ACCEL = 9.0, DIVE_V0 = 20.0;
+const SLOWMO = 1.0/3.0;
+const dummy=new THREE.Object3D(), _m=new THREE.Matrix4(), _p=new THREE.Vector3(), _q=new THREE.Quaternion(), _s=new THREE.Vector3();
+const _lookQ=new THREE.Quaternion(), _toOrigin=new THREE.Vector3();
+
+let now=0, timeScale=1, targetTimeScale=1;
+let shakeT=0, shakeAmp=0;
+let secondaryT=0;
+let coreDim=1;
+let tensionOn=true;
+let clusterLaunched=false;
+
+const ui={ main:document.getElementById('hudMain'), sub:document.getElementById('hudSub'),
+  vel:document.getElementById('vel'), dist:document.getElementById('dist'), mode:document.getElementById('mode'),
+  pcount:document.getElementById('pcount'), levi:document.getElementById('levi'), crust:document.getElementById('crust'),
+  burnFill:document.getElementById('burnFill'), burnPct:document.getElementById('burnPct'),
+  hud:document.getElementById('hud'),
+  btnFree:document.getElementById('btnFree'), btnImpact:document.getElementById('btnImpact'),
+  btnTension:document.getElementById('btnTension') };
+function setHud(m,s,mode){ ui.main.textContent=m; ui.sub.textContent=s; ui.mode.textContent=mode; }
+const LEVI_LABEL={ idle:'STANDBY', dive:'ACCELERATING', recoil:'RECOIL', orbit:'ORBIT' };
+
+ui.btnImpact.onclick=()=>{ if(phase==='approach') startDive(); };
+ui.btnFree.onclick=()=>{ controls.autoRotate=!controls.autoRotate; controls.autoRotateSpeed=0.35;
+  ui.btnFree.classList.toggle('active', controls.autoRotate); };
+ui.btnTension.onclick=()=>{ tensionOn=!tensionOn; ui.btnTension.classList.toggle('active', tensionOn); };
+document.getElementById('btnReset').onclick=resetScene;
+
+function detachPatch(pd){
+  const c = pd.centerDir.clone().multiplyScalar((R+RIN_BASE)/2);
+  pd.c0 = c.clone();
+  pd.mesh.geometry.translate(-c.x,-c.y,-c.z);
+  pd.mesh.position.copy(c);
+  const out = pd.centerDir.clone();
+  const tang = new THREE.Vector3(Math.random()-0.5,Math.random()-0.5,Math.random()-0.5).cross(out).normalize();
+  const mass = 0.4 + pd.size*0.9;
+  pd.vel.copy(out).multiplyScalar(THREE.MathUtils.clamp(34/mass,2.5,42)).addScaledVector(tang,(Math.random()-0.5)*THREE.MathUtils.clamp(10/mass,0.5,9));
+  const av = THREE.MathUtils.clamp(2.4/mass, 0.15, 2.4);
+  pd.angVel.set((Math.random()-0.5)*av,(Math.random()-0.5)*av,(Math.random()-0.5)*av);
+  pd.detached=true;
+}
+function activatePatch(pd){
+  pd.activated=true;
+  const ad=pd.centerDir.angleTo(IMPACT_DIR);
+  if(ad < DETACH_ZONE - DETACH_EDGE) detachPatch(pd);
+  else if(ad < DETACH_ZONE + DETACH_EDGE){ detachPatch(pd); pd.tethered=true; pd.vel.set(0,0,0); }
+}
+
+function clearPool(pool){ for(let i=0;i<pool.n;i++){ pool.life[i]=0; pool.size[i]=0; }
+  pool.g.attributes.life.needsUpdate=true; pool.g.attributes.size.needsUpdate=true; }
+function clearCrater(pool){ for(let i=0;i<pool.n;i++){ pool.size[i]=0; pool.glow[i]=0; }
+  pool.g.attributes.size.needsUpdate=true; pool.g.attributes.aGlow.needsUpdate=true; }
+
+function resetScene(){
+  phase='approach'; leviState='idle';
+  controls.autoRotate=false; ui.btnFree.classList.remove('active');
+  camAuto=true;
+  camera.position.copy(APPROACH_DIR).multiplyScalar(500).addScaledVector(perpA, 650).addScaledVector(perpB, 200);
+  controls.target.set(0, 0, 0); controls.update();
+  leviDist=APPROACH_DIST; leviVelX=0; leviVel.set(0,0,0);
+  levi.group.position.copy(APPROACH_DIR).multiplyScalar(leviDist);
+  levi.group.quaternion.copy(baseQ);
+  patchMat.uniforms.uImpact.value=0; atmoMat.uniforms.uImpact.value=0;
+  spin=0; patchMat.uniforms.uSpin.value=0;
+  planetRot=0; earthPlanet.rotation.y=0; cloudSphere.rotation.y=0;
+  timeScale=1; targetTimeScale=1; shakeT=0; shakeAmp=0;
+  secondaryT=0;
+  coreDim=1; coreMat.uniforms.uDim.value=1; coreLight.intensity=0;
+  clusterLaunched=false;
+  debugOn=false; earthMat.uniforms.uDebug.value=0; cloudMat.uniforms.uDebug.value=0;
+  for(let i=0;i<SH;i++){ uMarkOn[i]=0; uShockInt[i]=0; uShockDust[i]=0; uShockFront[i]=0;
+    uScorchOn[i]=0; uScorchFront[i]=0; uCloudClear[i]=0; cloudT[i]=-1; cloudMag[i]=0; }
+  for(let i=0;i<RING_N;i++){ const rd=ringData[i];
+    rd.scattered=false; rd.dead=false; rd.burning=false; rd.fade=1.0;
+    ringMesh.setColorAt(i, _rockCol.setRGB(0.54,0.44,0.31)); }
+  ringMesh.instanceColor.needsUpdate=true;
+  for(const im of impacts) deactivateImpact(im);
+  for(let i=0;i<TRAIL_N;i++) trailLife[i]=0;
+  trailG.attributes.life.needsUpdate=true; trailG.attributes.size.needsUpdate=true;
+  clearPool(firePool); clearPool(smokePool); clearPool(crustPool); clearCrater(craterPool);
+  shockPass.uniforms.uAber.value=0; shockPass.uniforms.uRingStr.value=0; shockPass.uniforms.uRing.value=0;
+  shockPass.uniforms.uPunchStr.value=0;
+  bloom.strength=0.5; renderer.toneMappingExposure=0.95;
+  for(const s of secLights){ s.life=0; s.light.intensity=0; }
+  shockwave.visible=false;
+  for(let i=0;i<SW;i++) swLife[i]=0; swG.attributes.life.needsUpdate=true;
+  for(let i=0;i<P;i++) pLife[i]=0; pG.attributes.life.needsUpdate=true;
+  for(let i=0;i<D;i++){ dummy.position.set(0,0,0); dummy.scale.setScalar(0.001); dummy.updateMatrix(); debris.setMatrixAt(i,dummy.matrix); }
+  debris.instanceMatrix.needsUpdate=true;
+  for(let i=0;i<CHUNK;i++){ dummy.position.set(0,0,0); dummy.scale.setScalar(0.001); dummy.updateMatrix(); chunkDebris.setMatrixAt(i,dummy.matrix); }
+  chunkDebris.instanceMatrix.needsUpdate=true;
+  impactLights.forEach(pl=>pl.intensity=0);
+  for(const pd of patches){
+    pd.tethered=false; pd.activated=false; pd.toEarth=false; pd.isBig=false; pd.rested=false;
+    if(pd.detached && pd.c0){
+      pd.mesh.geometry.translate(pd.c0.x, pd.c0.y, pd.c0.z);
+      pd.mesh.position.set(0,0,0); pd.mesh.quaternion.identity();
+      pd.mesh.scale.setScalar(1);
+      pd.mesh.visible=true;
+      pd.detached=false; pd.c0=null;
+    }
+  }
+  ui.burnFill.style.width='0%'; ui.burnPct.textContent='0';
+  ui.crust.textContent='0 / 0 / '+patches.length; ui.levi.textContent='STANDBY';
+  setHud('APPROACH VECTOR LOCKED','LEVIATHAN CHARGING — FREE FLIGHT · [V] DEBUG','APPROACH');
+}
+
+function startDive(){
+  phase='dive'; leviState='dive'; leviVelX=DIVE_V0;
+  leviDist=APPROACH_DIST;
+  setHud('IMPACT IMMINENT','LEVIATHAN ACCELERATING — SLOW-MO ENGAGED','DIVE');
+}
+
+function triggerImpact(){
+  phase='impact'; leviState='recoil'; impactStart=now;
+  patchMat.uniforms.uImpact.value=0.001; atmoMat.uniforms.uImpact.value=0.001;
+  leviVel.copy(APPROACH_DIR).multiplyScalar(150).addScaledVector(perpA, 60).addScaledVector(perpB, 25);
+  spawnExplosion();
+  scatterRing();
+  timeScale=0.2; targetTimeScale=1.0;
+  shakeAmp=1.6; shakeT=0;
+  shockPass.uniforms.uAber.value=0.02;
+  const pr=IMPACT_WORLD.clone().project(camera);
+  shockPass.uniforms.uCenter.value.set((pr.x+1)/2, (pr.y+1)/2);
+  shockPass.uniforms.uRing.value=0.0;
+  shockPass.uniforms.uRingStr.value=0.035;
+  clusterLaunched=false;
+  impactLights.forEach((pl,i)=>{ const o=IMPACT_DIR.clone().add(new THREE.Vector3((Math.random()-0.5)*0.8,(Math.random()-0.5)*0.8,(Math.random()-0.5)*0.8)).normalize();
+    pl.position.copy(IMPACT_WORLD).addScaledVector(o, 12+i*6); pl.intensity=6; });
+  shockwave.visible=true;
+  for(let i=0;i<SW;i++){
+    const theta=Math.random()*Math.PI*2, phi=Math.acos(2*Math.random()-1), r=R*1.02;
+    swPos[i*3]=r*Math.sin(phi)*Math.cos(theta); swPos[i*3+1]=r*Math.sin(phi)*Math.sin(theta); swPos[i*3+2]=r*Math.cos(phi);
+    swLife[i]=0; swSpeed[i]=0.8+Math.random()*0.4;
+  }
+  swG.attributes.position.needsUpdate=true; swG.attributes.life.needsUpdate=true;
+  ui.hud.classList.remove('shake'); void ui.hud.offsetWidth; ui.hud.classList.add('shake');
+  setHud('IMPACT CONFIRMED','THERMAL FRONT PROPAGATING — SATELLITE BREACH','IMPACT');
+}
+
+function spawnExplosion(){
+  const outN = IMPACT_DIR.clone();
+  for(let i=0;i<P;i++){
+    const jitter=new THREE.Vector3((Math.random()-0.5)*10,(Math.random()-0.5)*10,(Math.random()-0.5)*10);
+    const base=IMPACT_WORLD.clone().add(jitter);
+    pPos[i*3]=base.x; pPos[i*3+1]=base.y; pPos[i*3+2]=base.z;
+    const ty=pType[i]; let spread, sp;
+    if(ty===0){ spread=0.55; sp=30+Math.random()*70; pRate[i]=0.12; }
+    else if(ty===1){ spread=1.3; sp=10+Math.random()*40; pRate[i]=0.16; }
+    else if(ty===2){ spread=1.6; sp=6+Math.random()*22; pRate[i]=0.08; }
+    else { spread=0.4; sp=55+Math.random()*75; pRate[i]=0.6; }
+    const dir=outN.clone().add(new THREE.Vector3((Math.random()-0.5)*spread,(Math.random()-0.5)*spread,(Math.random()-0.5)*spread)).normalize();
+    pVel[i*3]=dir.x*sp; pVel[i*3+1]=dir.y*sp; pVel[i*3+2]=dir.z*sp;
+    if(ty===0){ pCol[i*3]=0.32+Math.random()*0.12; pCol[i*3+1]=0.2+Math.random()*0.08; pCol[i*3+2]=0.13; pSize[i]=0.5+Math.random()*2.2; }
+    else if(ty===1){ pCol[i*3]=0.85+Math.random()*0.1; pCol[i*3+1]=0.18+Math.random()*0.15; pCol[i*3+2]=0.03; pSize[i]=1.0+Math.random()*3.0; }
+    else if(ty===2){ pCol[i*3]=0.4+Math.random()*0.1; pCol[i*3+1]=0.35+Math.random()*0.1; pCol[i*3+2]=0.3; pSize[i]=3.0+Math.random()*5.0; }
+    else { pCol[i*3]=3.0; pCol[i*3+1]=1.4; pCol[i*3+2]=0.5; pSize[i]=0.3+Math.random()*0.7; }
+    pLife[i]=1.0;
+  }
+  pG.attributes.position.needsUpdate=pG.attributes.customColor.needsUpdate=pG.attributes.life.needsUpdate=pG.attributes.size.needsUpdate=true;
+  for(let i=0;i<D;i++){
+    _p.copy(IMPACT_WORLD).add(new THREE.Vector3((Math.random()-0.5)*5,(Math.random()-0.5)*5,(Math.random()-0.5)*5));
+    _s.setScalar(0.3+Math.random()*2.0);
+    dummy.position.copy(_p); dummy.scale.copy(_s); dummy.rotation.set(Math.random()*6.28,Math.random()*6.28,Math.random()*6.28);
+    dummy.updateMatrix(); debris.setMatrixAt(i,dummy.matrix);
+    const dir=outN.clone().add(new THREE.Vector3((Math.random()-0.5)*0.7,(Math.random()-0.5)*0.7,(Math.random()-0.5)*0.7)).normalize();
+    dVel[i].copy(dir.multiplyScalar(28+Math.random()*55));
+  }
+  debris.instanceMatrix.needsUpdate=true;
+  for(let i=0;i<CHUNK;i++){
+    _p.copy(IMPACT_WORLD).add(new THREE.Vector3((Math.random()-0.5)*8,(Math.random()-0.5)*8,(Math.random()-0.5)*8));
+    _s.setScalar(1.6+Math.random()*3.4);
+    dummy.position.copy(_p); dummy.scale.copy(_s); dummy.rotation.set(Math.random()*6.28,Math.random()*6.28,Math.random()*6.28);
+    dummy.updateMatrix(); chunkDebris.setMatrixAt(i,dummy.matrix);
+    const dir=outN.clone().add(new THREE.Vector3((Math.random()-0.5)*0.5,(Math.random()-0.5)*0.5,(Math.random()-0.5)*0.5)).normalize();
+    cVel[i].copy(dir.multiplyScalar(18+Math.random()*34));
+  }
+  chunkDebris.instanceMatrix.needsUpdate=true;
+}
+
+function updateTentacles(nowT, ampMul){
+  for(const a of animPivots){
+    const grow=(a.idx+1)/a.n;
+    a.pivot.rotation.z = a.amp*ampMul*Math.sin(nowT*0.45 + a.phaseA)*grow;
+    a.pivot.rotation.x = a.amp*ampMul*0.85*Math.cos(nowT*0.38 + a.phaseB)*grow;
+  }
+}
+function lookOriginQuat(pos){
+  _toOrigin.copy(pos).negate().normalize();
+  _lookQ.setFromUnitVectors(X_AXIS, _toOrigin);
+  return _lookQ;
+}
+
+const clock=new THREE.Clock(); let activeP=0;
+
+function animate(){
+  requestAnimationFrame(animate);
+  const rdt=Math.min(clock.getDelta(),0.05);
+
+  if(phase==='impact' && (now-impactStart)>0.4) targetTimeScale=1.0;
+  timeScale += (targetTimeScale-timeScale)*(1-Math.exp(-rdt*3.0));
+  const slowmo = (phase==='dive'||phase==='impact'||phase==='orbit') ? SLOWMO : 1.0;
+  const dt = rdt*timeScale*slowmo;
+  now += dt;
+
+  for(let i=0;i<SH;i++){
+    if(cloudT[i]>=0){
+      cloudT[i]+=dt;
+      const tH=lerpK(10,18,cloudMag[i]);
+      const tR=lerpK(24,40,cloudMag[i]);
+      uCloudClear[i] = cloudT[i]<tH ? 1.0 : Math.max(0, 1-(cloudT[i]-tH)/tR);
+      if(uCloudClear[i]<=0){ cloudT[i]=-2; uCloudClear[i]=0; }
+    }
+  }
+
+  const impT = (phase==='impact'||phase==='orbit') ? now-impactStart : 0;
+  patchMat.uniforms.uTime.value=now; leviMat.uniforms.uTime.value=now; coreMat.uniforms.uTime.value=now;
+  chunkMat2.uniforms.uTime.value=now; craterPool.mat.uniforms.uTime.value=now;
+  sunSprite.quaternion.copy(camera.quaternion);
+
+  planetRot += dt * 0.015;
+  earthPlanet.rotation.y = planetRot;
+  cloudSphere.rotation.y = planetRot;
+  earthMat.uniforms.uTime.value = now;
+  cloudMat.uniforms.uTime.value = now;
+  atmo1.uniforms.uTime.value = now;
+
+  shockPass.uniforms.uPunchStr.value *= Math.exp(-rdt*3.0);
+  if(shockPass.uniforms.uPunchStr.value<0.001) shockPass.uniforms.uPunchStr.value=0;
+
+  for(let i=0;i<SH;i++){ uMarkOn[i]=0; }
+  for(const im of impacts){ if(im.active){ uMarkDir[im.idx].copy(im.normalLocal); uMarkOn[im.idx]=1; } }
+
+  if(phase==='impact'||phase==='orbit'){
+    shockPass.uniforms.uAber.value = 0.02*Math.exp(-impT*4.0);
+    shockPass.uniforms.uRing.value = impT*1.1;
+    shockPass.uniforms.uRingStr.value = 0.035*Math.exp(-impT*2.2);
+  } else {
+    shockPass.uniforms.uAber.value = 0;
+    shockPass.uniforms.uRingStr.value = 0;
+  }
+
+  let blastAlive=0;
+
+  if(phase==='impact'||phase==='orbit'){
+    patchMat.uniforms.uImpact.value=impT;
+    atmoMat.uniforms.uImpact.value=impT;
+    const burnFront=impT*BURN_SPEED;
+    for(const pd of patches){
+      if(!pd.activated && burnFront > pd.centerDir.angleTo(IMPACT_DIR)) activatePatch(pd);
+      if(pd.detached && !pd.rested){
+        if(pd.toEarth){
+          _toE.copy(PLANET_POS).sub(pd.mesh.position);
+          const dE=_toE.length();
+          pd.vel.addScaledVector(_toE.normalize(), (EARTH_GM/(dE*dE))*dt);
+          pd.mesh.position.addScaledVector(pd.vel, dt);
+          const av=pd.angVel.length();
+          if(av>0) pd.mesh.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(pd.angVel.clone().normalize(), av*dt));
+          if(pd.isBig) emitDebrisWisp(pd.mesh.position, pd.vel, 2);
+          if(pd.isBig && dE<PLANET_R*2.6) emitFireWisp(pd.mesh.position, pd.vel, 8, 2.6);
+          if(dE<PLANET_R*1.18) emitWisp(pd.mesh.position, pd.vel, pd.isBig?6:3);
+          if(dE<PLANET_R*1.03){
+            spawnImpact(pd.mesh.position, pd.blastSize, pd.isBig?1200:180, pd.isBig);
+            pd.mesh.visible=false; pd.rested=true;
+            if(pd.isBig){ shakeAmp=Math.max(shakeAmp,1.6); shakeT=0; bloom.strength=Math.max(bloom.strength,0.85); }
+          }
+        } else if(pd.tethered){
+          const tx=pd.c0.x-pd.mesh.position.x, ty=pd.c0.y-pd.mesh.position.y, tz=pd.c0.z-pd.mesh.position.z;
+          pd.vel.x+=tx*5.0*dt; pd.vel.y+=ty*5.0*dt; pd.vel.z+=tz*5.0*dt;
+          pd.vel.multiplyScalar(1-2.2*dt);
+          pd.mesh.position.addScaledVector(pd.vel, dt);
+        } else {
+          const dist=pd.mesh.position.length()+0.01; const g=140/(dist*dist+150);
+          pd.vel.addScaledVector(pd.mesh.position.clone().normalize(), -g*dt);
+          pd.mesh.position.addScaledVector(pd.vel, dt);
+          const av=pd.angVel.length();
+          if(av>0) pd.mesh.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(pd.angVel.clone().normalize(), av*dt));
+        }
+      }
+    }
+    const peaks=Math.exp(-impT*1.6)+0.6*Math.exp(-Math.pow(impT-0.25,2)/0.02)+0.4*Math.exp(-Math.pow(impT-0.6,2)/0.03);
+    impactLights.forEach((pl,i)=>{ pl.intensity=Math.max(0, 6*peaks*(0.7+0.3*Math.sin(impT*30+i*2.1)));
+      pl.position.addScaledVector(IMPACT_DIR, -8*dt); });
+    if(shockwave.visible){
+      for(let i=0;i<SW;i++){ if(swLife[i]>=1.0)continue;
+        const x=swPos[i*3],y=swPos[i*3+1],z=swPos[i*3+2];
+        const il=1.0/Math.sqrt(x*x+y*y+z*z+0.0001); const speed=swSpeed[i]*80*dt;
+        swPos[i*3]+=x*il*speed; swPos[i*3+1]+=y*il*speed; swPos[i*3+2]+=z*il*speed; swLife[i]+=dt*0.4; }
+      swG.attributes.position.needsUpdate=true; swG.attributes.life.needsUpdate=true;
+      if(impT>2.5) shockwave.visible=false;
+    }
+
+    secondaryT-=dt;
+    if(impT<2.5 && secondaryT<=0){
+      secondaryT=0.12;
+      const rnd=IMPACT_DIR.clone().add(new THREE.Vector3((Math.random()-0.5)*1.6,(Math.random()-0.5)*1.6,(Math.random()-0.5)*1.6)).normalize();
+      const center=rnd.clone().multiplyScalar(R*1.0);
+      spawnSecondary(1500, center);
+      const free=secLights.find(s=>s.life<=0);
+      if(free){ free.light.position.copy(center).multiplyScalar(1.05); free.life=1.0; }
+    }
+    for(const s of secLights){ if(s.life>0){ s.life-=dt*2.5; s.light.intensity=Math.max(0,s.life)*5; } }
+
+    if(impT>0.45 && !clusterLaunched){ clusterLaunched=true; launchCrustCluster(); }
+
+    activeP=0;
+    for(let i=0;i<P;i++){ if(pLife[i]<=0)continue; activeP++;
+      const x=pPos[i*3],y=pPos[i*3+1],z=pPos[i*3+2], dist=Math.sqrt(x*x+y*y+z*z)+0.01, g=500/(dist*dist+100);
+      pVel[i*3]-=x/dist*g*dt; pVel[i*3+1]-=y/dist*g*dt; pVel[i*3+2]-=z/dist*g*dt;
+      pPos[i*3]+=pVel[i*3]*dt; pPos[i*3+1]+=pVel[i*3+1]*dt; pPos[i*3+2]+=pVel[i*3+2]*dt;
+      pLife[i]-=dt*pRate[i];
+      if(pLife[i]<0.4&&pType[i]===1){ pCol[i*3]=0.18; pCol[i*3+1]=0.12; pCol[i*3+2]=0.08; } }
+    pG.attributes.position.needsUpdate=pG.attributes.life.needsUpdate=pG.attributes.customColor.needsUpdate=true;
+    for(let i=0;i<D;i++){ debris.getMatrixAt(i,_m); _m.decompose(_p,_q,_s); if(_s.x<0.01)continue;
+      const dist=_p.length()+0.01, g=220/(dist*dist+70);
+      dVel[i].x-=_p.x/dist*g*dt; dVel[i].y-=_p.y/dist*g*dt; dVel[i].z-=_p.z/dist*g*dt;
+      _p.addScaledVector(dVel[i],dt);
+      _q.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(dRot[i].x*dt*3,dRot[i].y*dt*3,dRot[i].z*dt*3)));
+      dummy.position.copy(_p); dummy.quaternion.copy(_q); dummy.scale.copy(_s); dummy.updateMatrix(); debris.setMatrixAt(i,dummy.matrix); }
+    debris.instanceMatrix.needsUpdate=true;
+    for(let i=0;i<CHUNK;i++){ chunkDebris.getMatrixAt(i,_m); _m.decompose(_p,_q,_s); if(_s.x<0.01)continue;
+      const dist=_p.length()+0.01, g=200/(dist*dist+90);
+      cVel[i].x-=_p.x/dist*g*dt; cVel[i].y-=_p.y/dist*g*dt; cVel[i].z-=_p.z/dist*g*dt;
+      _p.addScaledVector(cVel[i],dt);
+      _q.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(cRot[i].x*dt*2,cRot[i].y*dt*2,cRot[i].z*dt*2)));
+      dummy.position.copy(_p); dummy.quaternion.copy(_q); dummy.scale.copy(_s); dummy.updateMatrix(); chunkDebris.setMatrixAt(i,dummy.matrix); }
+    chunkDebris.instanceMatrix.needsUpdate=true;
+
+    const dimT=Math.max(0, impT-3.0);
+    coreDim=Math.max(0.12, 1.0 - dimT*0.013);
+    coreMat.uniforms.uDim.value=coreDim;
+    coreLight.intensity=coreDim*1.2;
+
+    bloom.strength=0.5+Math.max(0,0.6*Math.exp(-impT*1.5));
+    if(impT>4 && phase==='impact'){ phase='orbit';
+      setHud('DEBRIS FIELD ANALYSIS','AWAITING LEVIATHAN CORE FRAGMENT','ORBIT'); }
+  } else {
+    coreMat.uniforms.uDim.value=1; coreLight.intensity=0;
+  }
+
+  let ringColorDirty=false;
+  for(let i=0;i<RING_N;i++){
+    const rd=ringData[i];
+    if(rd.dead){
+      dummy.position.set(0,0,0); dummy.scale.setScalar(0.001); dummy.updateMatrix();
+      ringMesh.setMatrixAt(i,dummy.matrix); continue;
+    }
+    if(!rd.scattered){
+      rd.angle+=rd.orbitSpeed*dt;
+      rd.pos.set(rd.radius*Math.cos(rd.angle), rd.height, rd.radius*Math.sin(rd.angle));
+      rd.rx+=rd.rxs*dt*0.3; rd.ry+=rd.rys*dt*0.3;
+    } else {
+      _toE.copy(PLANET_POS).sub(rd.pos);
+      const dE=_toE.length();
+      rd.vel.addScaledVector(_toE.normalize(), (EARTH_GM/(dE*dE))*dt);
+      rd.pos.addScaledVector(rd.vel, dt);
+      rd.rx+=rd.rxs*dt; rd.ry+=rd.rys*dt;
+      if(dE<PLANET_R*1.5){
+        rd.burning=true;
+        if(rd.survives){
+          emitFireWisp(rd.pos, rd.vel, 5, 1.6);
+          ringMesh.setColorAt(i, _hotCol.setRGB(1.0,0.5,0.15));
+          if(dE<PLANET_R*1.02){ spawnImpact(rd.pos, 30+rd.size*16, 50, false); rd.dead=true;
+            ringMesh.setColorAt(i, _rockCol.setRGB(0.54,0.44,0.31)); }
+        } else {
+          emitFireWisp(rd.pos, rd.vel, 9, 3.2);
+          ringMesh.setColorAt(i, _hotCol.setRGB(1.0,0.62,0.22));
+          if(dE<PLANET_R*1.1) rd.fade-=dt*3.0;
+          if(rd.fade<=0){
+            const bigPending = antipodePatches[0] && antipodePatches[0].toEarth && !antipodePatches[0].rested;
+            const freeSlots  = impacts.filter(x=>!x.active).length;
+            if(!(bigPending && freeSlots<=1)){
+              emitFireWisp(rd.pos, rd.vel, 14, 4.0);
+              const microBlast = rd.size*1.6;
+              spawnImpact(rd.pos, microBlast, 24, false, true);
+            }
+            rd.dead=true;
+          }
+        }
+        ringColorDirty=true;
+      } else if(rd.burning){
+        rd.burning=false;
+        ringMesh.setColorAt(i, _rockCol.setRGB(0.54,0.44,0.31));
+        ringColorDirty=true;
+      }
+      if(rd.pos.length()>40000) rd.dead=true;
+    }
+    dummy.position.copy(rd.pos);
+    dummy.rotation.set(rd.rx,rd.ry,0);
+    const sc = rd.burning && !rd.survives ? Math.max(rd.fade,0.25)*1.7 : rd.fade;
+    dummy.scale.setScalar(rd.size*sc);
+    dummy.updateMatrix();
+    ringMesh.setMatrixAt(i,dummy.matrix);
+  }
+  ringMesh.instanceMatrix.needsUpdate=true;
+  if(ringColorDirty) ringMesh.instanceColor.needsUpdate=true;
+
+  for(let i=0;i<TRAIL_N;i++){ if(trailLife[i]<=0)continue;
+    trailPos[i*3]+=trailVel[i*3]*dt; trailPos[i*3+1]+=trailVel[i*3+1]*dt; trailPos[i*3+2]+=trailVel[i*3+2]*dt;
+    trailVel[i*3]*=0.96; trailVel[i*3+1]*=0.96; trailVel[i*3+2]*=0.96;
+    trailLife[i]-=dt*2.0; if(trailLife[i]<=0) trailSize[i]=0; }
+  trailG.attributes.position.needsUpdate=trailG.attributes.life.needsUpdate=trailG.attributes.size.needsUpdate=true;
+
+  updateImpacts(dt);
+  blastAlive += updateBlastPool(firePool, dt);
+  blastAlive += updateBlastPool(smokePool, dt);
+  blastAlive += updateBlastPool(crustPool, dt);
+
+  let tentacleMul=0.7;
+  if(leviState==='idle'){
+    spin+=dt*0.02; patchMat.uniforms.uSpin.value=spin;
+    leviDist=APPROACH_DIST;
+    const charge=0.5+0.5*Math.sin(now*2.2);
+    const vib=charge*1.3;
+    levi.group.position.copy(APPROACH_DIR).multiplyScalar(leviDist)
+      .addScaledVector(perpA, Math.sin(now*0.2)*8 + Math.sin(now*21)*vib*0.6)
+      .addScaledVector(perpB, Math.cos(now*0.17)*6 + Math.cos(now*19)*vib);
+    levi.group.quaternion.copy(baseQ);
+    _wobE.set(Math.sin(now*0.5)*0.03, Math.cos(now*0.4)*0.03, Math.sin(now*0.3)*0.04);
+    _wobQ.setFromEuler(_wobE);
+    levi.group.quaternion.multiply(_wobQ);
+    tentacleMul=1.1+0.5*charge;
+    ui.vel.textContent=Math.floor(14000+Math.sin(now)*200+charge*900);
+    ui.dist.textContent=Math.max(0,Math.floor((leviDist-R)*100));
+  } else if(leviState==='dive'){
+    leviVelX += DIVE_ACCEL*dt;
+    leviDist -= leviVelX*dt;
+    levi.group.position.copy(APPROACH_DIR).multiplyScalar(leviDist);
+    levi.group.quaternion.copy(baseQ);
+    tentacleMul=2.0;
+    ui.dist.textContent=Math.max(0,Math.floor((leviDist-R)*100));
+    if(leviDist<=CONTACT_DIST){ leviDist=CONTACT_DIST; triggerImpact(); }
+  } else if(leviState==='recoil'){
+    levi.group.position.addScaledVector(leviVel, dt);
+    leviVel.multiplyScalar(1-0.9*dt);
+    levi.group.quaternion.slerp(lookOriginQuat(levi.group.position), 1-Math.exp(-2*dt));
+    tentacleMul=1.2;
+    if(impT>1.8) leviState='orbit';
+  } else if(leviState==='orbit'){
+    const op=ORBIT_POS.clone().add(new THREE.Vector3(Math.sin(now*0.3)*4, Math.cos(now*0.25)*3, Math.sin(now*0.2)*3));
+    levi.group.position.lerp(op, 1-Math.exp(-1.5*dt));
+    levi.group.quaternion.slerp(lookOriginQuat(levi.group.position), 1-Math.exp(-2*dt));
+    tentacleMul=1.0;
+  }
+  updateTentacles(now, tentacleMul);
+
+  if(tensionOn && leviState==='dive'){
+    const prog=THREE.MathUtils.clamp((APPROACH_DIST-leviDist)/(APPROACH_DIST-CONTACT_DIST), 0, 1);
+    const rate=0.8 + prog*2.6;
+    const bp=(now*rate)%1.0;
+    const thump=Math.exp(-Math.pow((bp-0.15)/0.1,2));
+    const amp=0.3+0.7*prog;
+    bloom.strength=0.5 + thump*0.4*amp;
+    renderer.toneMappingExposure=0.95 + thump*0.1*amp;
+  } else if(phase!=='impact' && phase!=='orbit'){
+    bloom.strength=0.5; renderer.toneMappingExposure=0.95;
+  }
+
+  if(phase==='impact'||phase==='orbit'){
+    const pct=Math.min(100, (impT*BURN_SPEED)/Math.PI*100);
+    ui.burnFill.style.width=pct.toFixed(1)+'%'; ui.burnPct.textContent=pct.toFixed(0);
+  }
+  if((frame++ & 7)===0){
+    ui.levi.textContent=LEVI_LABEL[leviState]||leviState;
+    let det=0,held=0; for(const pd of patches){ if(pd.detached&&!pd.tethered&&!pd.toEarth)det++; else if(pd.tethered)held++; }
+    ui.crust.textContent=det+' / '+held+' / '+(patches.length-det-held);
+  }
+
+  _mv.set(0,0,0);
+  camera.getWorldDirection(_mvF);
+  _mvR.crossVectors(_mvF, camera.up).normalize();
+  const spd=(keys['ShiftLeft']||keys['ShiftRight']?1400:450)*rdt;
+  if(keys['KeyW']) _mv.add(_mvF);
+  if(keys['KeyS']) _mv.sub(_mvF);
+  if(keys['KeyD']) _mv.add(_mvR);
+  if(keys['KeyA']) _mv.sub(_mvR);
+  if(keys['KeyE']) _mv.y+=1;
+  if(keys['KeyQ']) _mv.y-=1;
+  if(_mv.lengthSq()>0){
+    _mv.normalize().multiplyScalar(spd);
+    camera.position.add(_mv);
+    controls.target.add(_mv);
+    camAuto=false;
+  }
+
+  if(camAuto && (phase==='impact'||phase==='orbit')){
+    const big=antipodePatches[0];
+    if(big && big.toEarth && !big.rested && big.detached) _focusV.copy(big.mesh.position);
+    else _focusV.set(0,0,0);
+    controls.target.lerp(_focusV, 1-Math.exp(-1.2*rdt));
+  }
+
+  controls.update();
+
+  if(shakeAmp>0.001){
+    shakeT += rdt;
+    const amp=shakeAmp*Math.exp(-shakeT*2.5);
+    camera.position.x += Math.sin(shakeT*75.0)*amp;
+    camera.position.y += Math.cos(shakeT*61.0)*amp;
+    camera.position.z += Math.sin(shakeT*53.0)*amp*0.6;
+  }
+
+  ui.pcount.textContent=(activeP+blastAlive).toLocaleString();
+  composer.render();
+}
+
+window.addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight); composer.setSize(innerWidth,innerHeight); });
+
+try {
+  resetScene();
+  renderer.compile(scene, camera);
+  console.log('[impact:v28] TRUEFRAG: minScorch (small/med leave visible burn); mushroom capped (atmo visible); scale=1 (chunk==hole); whole rear hemisphere random-size frags; SH=IMP_N=16');
+  animate();
+} catch (e) {
+  console.error('[impact:v28] INIT ERROR:', e);
+}
+</script>
+</body>
+</html>
