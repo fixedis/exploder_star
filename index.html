@@ -197,7 +197,7 @@ function autoTier(){
 const QUALITY = {
   high:   { dprCap:2,   shadows:true,  bloomOff:false, bloomScale:0.85, bloomStr:0.45, stars:10000, trails:22000, fire:14000, smoke:14000, crust:10000, crater:40000, seg:96, sw:1300, deb:600, chunk:170, sh:16, ring:400 },
   medium: { dprCap:1.5, shadows:true,  bloomOff:false, bloomScale:0.6,  bloomStr:0.40, stars:6000,  trails:13000, fire:8000,  smoke:8000,  crust:6000,  crater:24000, seg:64, sw:1000, deb:450, chunk:130, sh:12, ring:350 },
-  low:    { dprCap:1,   shadows:false, bloomOff:true,  bloomScale:0.5,  bloomStr:0.0,  stars:2500,  trails:5000,  fire:3500,  smoke:3500,  crust:2500,  crater:8000,  seg:40, sw:600,  deb:250, chunk:70,  sh:8,  ring:250 },
+  low:    { dprCap:1,   shadows:false, bloomOff:true,  bloomScale:0.5,  bloomStr:0.0,  stars:1500,  trails:3000,  fire:2000,  smoke:2000,  crust:1500,  crater:4000,  seg:32, sw:400,  deb:150, chunk:40,  sh:6,  ring:150 },
   ultra:  { dprCap:1,   shadows:false, bloomOff:false, bloomScale:0.4,  bloomStr:0.45, stars:2000,  trails:4000,  fire:3000,  smoke:3000,  crust:2000,  crater:6000,  seg:32, sw:500,  deb:200, chunk:60,  sh:8,  ring:200 },
   eco:    { dprCap:1,   shadows:false, bloomOff:true,  bloomScale:0.4,  bloomStr:0.0,  stars:1200,  trails:2500,  fire:2000,  smoke:2000,  crust:1500,  crater:4000,  seg:24, sw:400,  deb:160, chunk:50,  sh:6,  ring:150 }
 };
@@ -359,7 +359,7 @@ const nebMat = new THREE.ShaderMaterial({
       gl_FragColor=vec4(base+(c1+c2+c3+c4)*0.8*fil,1.0);
     }`
 });
-scene.add(new THREE.Mesh(new THREE.SphereGeometry(14000, 48, 48), nebMat));
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(14000, Q.sh>=12?48:24, Q.sh>=12?48:24), nebMat));
 
 function makeStars(count, rMin, rMax){
   const pos=[], sz=[], col=[]; let made=0, guard=0;
@@ -556,7 +556,7 @@ earthPlanet.position.copy(PLANET_POS);
 scene.add(earthPlanet);
 
 const cloudMat = new THREE.ShaderMaterial({
-  uniforms:{ uTime:{value:0}, uSunDir:{value:sunDir.clone()}, uDebug:{value:0},
+  uniforms:{ uTime:{value:0}, uSunDir:{value:sunDir.clone()}, uDebug:{value:0}, uSimple:{value:Q.sh<8?1.0:0.0},
     uShockDir:{value:uShockDirL}, uShockFront:{value:uShockFront}, uShockWidth:{value:uShockWidth},
     uShockInt:{value:uShockInt}, uShockDust:{value:uShockDust},
     uScorchDir:{value:uScorchDir}, uScorchFront:{value:uScorchFront}, uCloudClear:{value:uCloudClear},
@@ -569,7 +569,7 @@ const cloudMat = new THREE.ShaderMaterial({
       gl_Position=projectionMatrix*viewMatrix*wp;
     }`,
   fragmentShader:`
-    uniform float uTime; uniform vec3 uSunDir; uniform float uDebug;
+    uniform float uTime; uniform vec3 uSunDir; uniform float uDebug; uniform float uSimple;
     uniform vec3 uShockDir[${SH}]; uniform float uShockFront[${SH}]; uniform float uShockWidth[${SH}];
     uniform float uShockInt[${SH}]; uniform float uShockDust[${SH}];
     uniform vec3 uScorchDir[${SH}]; uniform float uScorchFront[${SH}]; uniform float uCloudClear[${SH}];
@@ -585,14 +585,16 @@ const cloudMat = new THREE.ShaderMaterial({
       float c2=fbm(wp*6.0+vec3(0.0,uTime*0.006,uTime*0.004),5)*0.5+0.5;
       float c3=fbm(wp*11.0+vec3(uTime*0.003),4)*0.5+0.5;
       float cloud=smoothstep(0.42,0.68, c1*0.5+c2*0.3+c3*0.2);
-      for(int i=0;i<4;i++){
-        float fi=float(i);
-        vec3 sCenter=normalize(vec3(sin(uTime*0.01+fi*1.6)*0.6, -0.3+fi*0.2, cos(uTime*0.008+fi*2.3)*0.6));
-        float sd=length(p-sCenter);
-        float spiral=atan(p.z-sCenter.z, p.x-sCenter.x)+sd*8.0-uTime*0.5*(1.0+fi*0.3);
-        float arm=1.0-smoothstep(0.0,0.5,abs(sin(spiral*1.5)));
-        float radial=(1.0-smoothstep(0.04,0.22,sd))*smoothstep(0.02,0.07,sd);
-        cloud=max(cloud, arm*radial*0.85);
+      if(uSimple<0.5){
+        for(int i=0;i<4;i++){
+          float fi=float(i);
+          vec3 sCenter=normalize(vec3(sin(uTime*0.01+fi*1.6)*0.6, -0.3+fi*0.2, cos(uTime*0.008+fi*2.3)*0.6));
+          float sd=length(p-sCenter);
+          float spiral=atan(p.z-sCenter.z, p.x-sCenter.x)+sd*8.0-uTime*0.5*(1.0+fi*0.3);
+          float arm=1.0-smoothstep(0.0,0.5,abs(sin(spiral*1.5)));
+          float radial=(1.0-smoothstep(0.04,0.22,sd))*smoothstep(0.02,0.07,sd);
+          cloud=max(cloud, arm*radial*0.85);
+        }
       }
       float condRing=0.0; float dustPile=0.0; float innerGlow=0.0;
       for(int i=0;i<${SH};i++){
@@ -798,8 +800,10 @@ function makeBounds(n, total, mergeProb){
   for(let i=1;i<raw.length-1;i++){ if(Math.random()>mergeProb) out.push(raw[i]); }
   out.push(raw[raw.length-1]); return out;
 }
-const phiB = makeBounds(30, Math.PI*2, 0.12);
-const thetaB = makeBounds(20, Math.PI, 0.12);
+const PHI_N = Q.sh>=12 ? 30 : 20;
+const THETA_N = Q.sh>=12 ? 20 : 14;
+const phiB = makeBounds(PHI_N, Math.PI*2, 0.12);
+const thetaB = makeBounds(THETA_N, Math.PI, 0.12);
 const patches=[];
 for(let a=0;a<phiB.length-1;a++) for(let b=0;b<thetaB.length-1;b++){
   const { geo, area } = buildPatch(thetaB[b],thetaB[b+1],phiB[a],phiB[a+1]);
@@ -833,7 +837,7 @@ const coreMat = new THREE.ShaderMaterial({
       col*=uDim;
       gl_FragColor=vec4(col,1.0); }`
 });
-scene.add(new THREE.Mesh(new THREE.SphereGeometry(R*0.72, 96, 96), coreMat));
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(R*0.72, Q.sh>=12?96:32, Q.sh>=12?96:32), coreMat));
 const coreLight=new THREE.PointLight(0xff6622, 0, 600, 2);
 coreLight.position.set(0,0,0); scene.add(coreLight);
 
@@ -853,7 +857,7 @@ const atmoMat = new THREE.ShaderMaterial({
       gl_FragColor=vec4(vec3(0.30,0.32,0.38)*(f+f*sunS), a); }`,
   uniforms:{ uSunDir:{value:sunDir}, uImpactDir:{value:IMPACT_DIR.clone()}, uImpact:{value:0} },
   transparent:true, side:THREE.BackSide, blending:THREE.AdditiveBlending, depthWrite:false, fog:false });
-scene.add(new THREE.Mesh(new THREE.SphereGeometry(R*1.05, 64, 64), atmoMat));
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(R*1.05, Q.sh>=12?64:32, Q.sh>=12?64:32), atmoMat));
 
 const RING_N=Q.ring;
 const ringMesh=new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1,0),
@@ -1462,19 +1466,21 @@ function buildLeviathan(){
       cur = pivot;
     }
   }
-  const TENT = 14;
+  const TENT = Q.sh>=12 ? 14 : 10;
+  const TSEG = Q.sh>=12 ? 13 : 8;
   for(let i=0;i<TENT;i++){
     const a = (i/TENT)*Math.PI*2;
     const back = -0.55 - Math.random()*0.25;
     const sideY = Math.cos(a)*0.7, sideZ = Math.sin(a)*0.7;
     const baseDir = new THREE.Vector3(back, sideY, sideZ).normalize();
     const origin = new THREE.Vector3(40 + Math.random()*14, 4+sideY*8, sideZ*8);
-    buildTentacle(origin, baseDir, 13, 9.5, 3.0, i*1.3);
+    buildTentacle(origin, baseDir, TSEG, 9.5, 3.0, i*1.3);
   }
-  for(let i=0;i<6;i++){
+  const TENT2 = Q.sh>=12 ? 6 : 4;
+  for(let i=0;i<TENT2;i++){
     const a=(i/6)*Math.PI*2;
     const baseDir=new THREE.Vector3(0.2, -0.8, 0).add(new THREE.Vector3(0,0,Math.sin(a)*0.5)).normalize();
-    buildTentacle(new THREE.Vector3(54, -10, Math.cos(a)*7), baseDir, 8, 6.0, 2.2, 20+i*1.1);
+    buildTentacle(new THREE.Vector3(54, -10, Math.cos(a)*7), baseDir, Q.sh>=12?8:5, 6.0, 2.2, 20+i*1.1);
   }
   const nose = new THREE.Object3D(); nose.position.set(NOSE_X,0,0); g.add(nose);
   return { group:g, nose, meshes:leviMeshes };
